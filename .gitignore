@@ -1,0 +1,47 @@
+# --- General / OS ---
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+.env.*.local
+
+# --- Docker & Databases ---
+deploy/pgdata/
+deploy/mongodata/
+.docker/
+
+
+# --- Backend (Node.js) ---
+backend/node_modules/
+backend/dist/
+backend/build/
+backend/npm-debug.log*
+
+# --- Mobile (React Native) ---
+mobile/node_modules/
+
+# Android specifics
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/generated/
+mobile/android/*.keystore
+!mobile/android/debug.keystore
+
+# iOS specifics
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/*.xcworkspace
+mobile/ios/.xccheckout
+mobile/ios/DerivedData/
+
+# Expo (if applicable)
+mobile/.expo/
+mobile/dist/
+
+# --- IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo

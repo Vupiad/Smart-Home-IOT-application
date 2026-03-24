@@ -1,0 +1,28 @@
+services:
+  # Relational DB for User Auth and Device Config
+  postgres-db:
+    image: postgres:15
+    container_name: smarthome-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+      POSTGRES_DB: smarthome_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  
+  mongo-db:
+    image: mongo:latest
+    container_name: smarthome-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/var/lib/mongodb/data
+
+volumes:
+  pgdata:
+  mongodata:
