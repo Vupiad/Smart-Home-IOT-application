@@ -1,5 +1,15 @@
-paho-mqtt==2.1.0
+# Web Framework
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+
+# Database Drivers
 motor==3.6.0
 pymongo==4.9.1
+SQLAlchemy==2.0.27
+psycopg[binary]>=3.1.18
+# Security & Utils
 python-dotenv==1.0.1
 pydantic>=2.7.0
+python-multipart==0.0.9
+passlib[bcrypt]==1.7.4
+PyJWT==2.8.0

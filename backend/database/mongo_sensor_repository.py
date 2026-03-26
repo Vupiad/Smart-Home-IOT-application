@@ -16,3 +16,17 @@ class MongoSensorRepository(IRepository):
         }
         await self.db.sensor_logs.insert_one(document)
         print(f"[Storage] Logged {topic} to MongoDB")
+
+    async def get_recent(self, topic: str, limit: int = 20):
+        """Fetches the last N readings for a specific sensor topic."""
+        cursor = self.db.sensor_logs.find({"topic": topic}) \
+                                    .sort("timestamp", -1) \
+                                    .limit(limit)
+        
+        results = []
+        async for doc in cursor:
+            # Convert MongoDB ObjectId to string for JSON compatibility
+            doc["_id"] = str(doc["_id"])
+            results.append(doc)
+            
+        return results
