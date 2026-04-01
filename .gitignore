@@ -45,3 +45,5 @@ mobile/dist/
 .vscode/
 *.swp
 *.swo
+
+__pycache__/
