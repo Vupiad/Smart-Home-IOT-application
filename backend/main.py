@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from api.v1.endpoints import sensors
 from dotenv import load_dotenv
-from database.postgres_db import engine, Base
+from backend.database.sql.postgres_database_manager import engine, Base
 
 load_dotenv()
 

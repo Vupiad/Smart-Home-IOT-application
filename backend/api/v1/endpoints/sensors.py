@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from database.mongo_sensor_repository import MongoSensorRepository
+from backend.database.nosql.mongo_sensor_repository import MongoSensorRepository
 import os
 
 router = APIRouter()
