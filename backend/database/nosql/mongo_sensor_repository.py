@@ -4,10 +4,9 @@ from .nosql_repository import IRepository
 
 
 class MongoSensorRepository(IRepository):
-    def __init__(self, uri: str, db_name: str):
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-
+    def __init__(self, db):
+        self.db = db
+        
     async def save(self, topic: str, payload: str):
         document = {
             "topic": topic,

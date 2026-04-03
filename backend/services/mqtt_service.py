@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-from database.nosql_repository import IRepository  # Import the interface for type hinting
+from backend.database.nosql.nosql_repository import IRepository  # Import the interface for type hinting
 class MqttService:
     def __init__(self, broker_config: dict, repository: IRepository):
         self.config = broker_config

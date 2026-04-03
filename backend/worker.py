@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 
 # Absolute imports from your new folder structure
-from database.mongo_sensor_repository import MongoSensorRepository
+from backend.database.nosql.mongo_sensor_repository import MongoSensorRepository
 from services.mqtt_service import MqttService
 
 load_dotenv()
