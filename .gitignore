@@ -45,3 +45,4 @@ mobile/dist/
 .vscode/
 *.swp
 *.swo
+node_modules
