@@ -1,8 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Text, View } from "react-native";
-
+import { Text, View, Image } from "react-native";
 import HomeScreen from "../features/home/HomeScreen";
 import ControlScreen from "../features/control/screens/ControlScreen";
 import DeviceDetailScreen from "../features/control/screens/DeviceDetailScreen";
@@ -171,16 +170,15 @@ export default function TabNavigator() {
           tabBarLabel: "Automation",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <Text
+              <Image
+                source={require("../../assets/automation-icon.png")}
                 style={{
-                  color,
-                  fontSize: 30,
-                  lineHeight: 30,
-                  fontWeight: focused ? "700" : "500",
+                  width: 28,
+                  height: 28,
+                  tintColor: color,
                 }}
-              >
-                101
-              </Text>
+                resizeMode="contain"
+              />
             </TabIcon>
           ),
         }}

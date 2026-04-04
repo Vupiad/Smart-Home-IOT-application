@@ -11,6 +11,7 @@ type HeaderProps = {
   dateLabel?: string;
   avatarUri?: string;
   onAvatarPress?: () => void;
+  onAddPress?: () => void;
 };
 
 const DEFAULT_AVATAR =
@@ -23,6 +24,7 @@ export default function Header({
   dateLabel = "Wed, May 24th",
   avatarUri = DEFAULT_AVATAR, // from be later
   onAvatarPress,
+  onAddPress,
 }: HeaderProps) {
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -73,8 +75,6 @@ export default function Header({
           </Pressable>
         </View>
 
-        <Text style={styles.tabName}>{tabName}</Text>
-
         <View style={styles.illustrationWrap}>
           <View style={styles.illustrationPanel}>
             <Ionicons
@@ -85,6 +85,17 @@ export default function Header({
             <Text style={styles.illustrationText}>SMART HOME</Text>
           </View>
         </View>
+
+        <View style={styles.titleRow}>
+          <Text style={styles.tabName}>{tabName}</Text>
+          {onAddPress && (
+            <Pressable onPress={onAddPress} style={styles.addButton}>
+              <Ionicons name="add" size={40} color="#fff" />
+            </Pressable>
+          )}
+        </View>
+
+
       </View>
     </SafeAreaView>
   );
