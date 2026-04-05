@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     height: 230,
     borderRadius: 115,
     borderWidth: 8,
-    borderColor: "#BDD2F6",
+    borderColor: "#2D5BFF",
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   modeButtonActive: {
-    backgroundColor: "#20BFE9",
+    backgroundColor: "#2D5BFF",
   },
   modeText: {
     color: "#454C58",

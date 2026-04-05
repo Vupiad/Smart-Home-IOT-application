@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FanDeviceDetail } from "../types";
@@ -18,7 +18,7 @@ export default function FanControl({
     <View>
       <View style={styles.circleWrap}>
         <View style={styles.circleInner}>
-          <MaterialCommunityIcons name="fan" size={86} color="#A9B1C1" />
+          <Ionicons name="aperture-outline" size={86} color="#2D5BFF" />
         </View>
       </View>
 
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     height: 210,
     borderRadius: 105,
     borderWidth: 8,
-    borderColor: "#B8D2FF",
+    borderColor: "#2D5BFF",
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   levelButtonActive: {
-    backgroundColor: "#22C0E9",
+    backgroundColor: "#2D5BFF",
   },
   levelText: {
     fontSize: 24,

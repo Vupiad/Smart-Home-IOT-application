@@ -67,6 +67,11 @@ export default function AutomationScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState("");
   const navigation = useNavigation<any>();
+
+  const handleAvatarPress = () => {
+    navigation.getParent()?.navigate("OwnersTab");
+  };
+
   const handleToggleScene = (id: string, newValue: boolean) => {
     setSceneActive(id, newValue);
   };
@@ -75,7 +80,11 @@ export default function AutomationScreen() {
 
   return (
     <View style={styles.container}>
-      <Header tabName="Automation" onAddPress={() => setModalVisible(true)} />
+      <Header
+        tabName="Automation"
+        onAvatarPress={handleAvatarPress}
+        onAddPress={() => setModalVisible(true)}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -225,31 +234,31 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   scrollContent: {
-    paddingTop: theme.spacing.lg,
-    paddingBottom: 40,
+    paddingTop: theme.layout.sectionGap,
+    paddingBottom: theme.spacing.xxl,
   },
   section: {
-    paddingHorizontal: 20,
-    marginTop: 20,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginTop: theme.layout.sectionGap,
   },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    paddingHorizontal: 20,
-    gap: 12,
-    marginTop: 20,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    gap: theme.layout.cardGap,
+    marginTop: theme.layout.sectionGap,
     width: "100%",
   },
   sectionContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginBottom: theme.layout.sectionGap,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.layout.contentGap,
   },
   sectionTitle: {
     ...theme.typography.title,
@@ -275,7 +284,7 @@ const styles = StyleSheet.create({
   chartCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
+    padding: theme.spacing.lg2,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -302,7 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: theme.spacing.md,
+    marginRight: theme.layout.contentGap,
   },
   deviceInfo: {
     flex: 1,
@@ -353,12 +362,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.layout.pagePaddingX,
   },
   modalContent: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.radius.lg,
-    padding: theme.spacing.xl,
+    padding: theme.layout.sectionGap,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
@@ -369,7 +378,7 @@ const styles = StyleSheet.create({
     ...theme.typography.title,
     fontSize: 18,
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.layout.contentGap,
     textAlign: "center",
   },
   input: {
@@ -381,7 +390,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: theme.colors.textPrimary,
     backgroundColor: "#F9FAFC",
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.layout.sectionGap,
   },
   modalActions: {
     flexDirection: "row",
@@ -396,8 +405,8 @@ const styles = StyleSheet.create({
   },
   makeAutoBtn: {
     backgroundColor: theme.colors.headerBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
     borderRadius: theme.radius.round,
   },
   makeAutoText: { color: theme.colors.white, fontSize: 16, fontWeight: "600" },

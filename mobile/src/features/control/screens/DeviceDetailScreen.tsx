@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import type { ControlStackParamList } from "../../../navigation/TabNavigator";
+import { DEVICE_CATALOG } from "../../../shared/constants/devices";
 import ACControl from "../components/ACControl";
 import FanControl from "../components/FanControl";
 import LightControl from "../components/LightControl";
@@ -43,6 +44,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
   const [detail, setDetail] = useState<DeviceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const catalogDevice = DEVICE_CATALOG.find((device) => device.id === deviceId);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -107,6 +109,17 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
     );
   }
 
+  const displayTitle = catalogDevice?.name ?? title;
+  const displayRoom = catalogDevice?.room ?? "Unknown room";
+  const displaySubtitle = catalogDevice?.subtitle ?? null;
+  const displayIcon =
+    catalogDevice?.icon ??
+    (detail.type === "fan"
+      ? "aperture-outline"
+      : detail.type === "ac"
+        ? "snow-outline"
+        : "bulb-outline");
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -114,16 +127,28 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
           <Ionicons name="chevron-back" size={24} color="#202736" />
         </Pressable>
 
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{displayTitle}</Text>
 
         <Switch
-          trackColor={{ false: "#D6DBE3", true: "#23C3EA" }}
+          trackColor={{ false: "#D6DBE3", true: "#2D5BFF" }}
           thumbColor={detail.isOn ? "#FFFFFF" : "#F2F2F2"}
           ios_backgroundColor="#D6DBE3"
           value={detail.isOn}
           onValueChange={onTogglePower}
           disabled={saving}
         />
+      </View>
+
+      <View style={styles.metaCard}>
+        <View style={styles.metaIconWrap}>
+          <Ionicons name={displayIcon as any} size={24} color="#2D5BFF" />
+        </View>
+        <View style={styles.metaTextWrap}>
+          <Text style={styles.metaRoom}>Room: {displayRoom}</Text>
+          {displaySubtitle ? (
+            <Text style={styles.metaSubtitle}>{displaySubtitle}</Text>
+          ) : null}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -264,5 +289,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 20,
     paddingBottom: 32,
+  },
+  metaCard: {
+    marginTop: 12,
+    marginHorizontal: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  metaIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#E8EEFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metaTextWrap: {
+    flex: 1,
+  },
+  metaRoom: {
+    color: "#2B3445",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  metaSubtitle: {
+    marginTop: 4,
+    color: "#616A78",
+    fontSize: 13,
   },
 });

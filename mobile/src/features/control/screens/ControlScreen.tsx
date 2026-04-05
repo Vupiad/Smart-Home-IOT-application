@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -11,20 +12,40 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import WeatherBar from "../../../shared/components/WeatherBar";
 import DeviceCard from "../../../shared/components/DeviceCard";
 import { CONTROL_DEVICE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
+import { ControlStackParamList } from "../../../navigation/TabNavigator";
+import { DeviceType } from "../types";
+import { theme } from "../../../theme";
 
 const ControlScreen: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const { selectDevicesByIds, setDevicePower } = useSmartHomeContext();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
   const devices = selectDevicesByIds(CONTROL_DEVICE_IDS);
 
   const filteredDevices = devices.filter((device) =>
     device.name.toLowerCase().includes(searchText.trim().toLowerCase()),
   );
+
+  const handleOpenDeviceDetail = (device: (typeof filteredDevices)[number]) => {
+    if (device.type === "door") {
+      Alert.alert("Not supported yet", "Door detail screen is not implemented yet.");
+      return;
+    }
+
+    navigation.navigate("DeviceDetail", {
+      deviceId: device.id,
+      deviceType: device.type as DeviceType,
+      title: device.name,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -95,6 +116,7 @@ const ControlScreen: React.FC = () => {
                 isOn={device.isOn}
                 subtitle={device.room}
                 onToggle={(isOn) => setDevicePower(device.id, isOn)}
+                onPress={() => handleOpenDeviceDetail(device)}
               />
             ))}
           </View>
@@ -114,11 +136,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F7FA",
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+    borderBottomLeftRadius: theme.spacing.xl,
+    borderBottomRightRadius: theme.spacing.xl,
   },
   headerRow: {
     flexDirection: "row",
@@ -133,7 +155,7 @@ const styles = StyleSheet.create({
   },
   bellIcon: {
     position: "absolute",
-    right: 20,
+    right: theme.layout.pagePaddingX,
     top: 60,
   },
   bellBadge: {
@@ -153,7 +175,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.layout.pagePaddingX,
     marginTop: -14,
   },
   searchBar: {
@@ -176,8 +198,8 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   welcomeSection: {
-    paddingHorizontal: 20,
-    marginTop: 16,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginTop: theme.layout.sectionGap,
   },
   welcomeText: {
     fontSize: 12,
@@ -185,8 +207,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   addDeviceRow: {
-    paddingHorizontal: 20,
-    marginTop: 16,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginTop: theme.layout.sectionGap,
     alignItems: "flex-end",
   },
   addDeviceBtn: {
@@ -209,9 +231,9 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   section: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 24,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginTop: theme.layout.sectionGap,
+    marginBottom: theme.layout.sectionGap,
   },
   deviceGrid: {
     flexDirection: "row",

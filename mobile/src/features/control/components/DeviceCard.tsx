@@ -36,11 +36,10 @@ export default function DeviceCard({
     <Pressable style={styles.card} onPress={onPress}>
       <View style={styles.iconWrap}>{iconByType(device.type)}</View>
       <Text style={styles.name}>{device.name}</Text>
-      {/* <Text style={styles.subtitle}>{device.deviceCountLabel}</Text> */}
       <Text style={styles.room}>{device.room}</Text>
       <View style={styles.footer}>
         <Switch
-          trackColor={{ false: "#D6DBE3", true: "#23C3EA" }}
+          trackColor={{ false: "#D6DBE3", true: "#2D5BFF" }}
           thumbColor={device.isOn ? "#FFFFFF" : "#F2F2F2"}
           ios_backgroundColor="#D6DBE3"
           value={device.isOn}

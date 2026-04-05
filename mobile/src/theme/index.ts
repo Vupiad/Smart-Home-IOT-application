@@ -14,8 +14,17 @@ export const theme = {
     xs: 4,
     sm: 8,
     md: 12,
+    lg2: 16,
     lg: 20,
     xl: 24,
+    xxl: 32,
+  },
+  layout: {
+    pagePaddingX: 20,
+    sectionGap: 24,
+    contentGap: 12,
+    cardGap: 12,
+    titleSubtitleGap: 8,
   },
   radius: {
     md: 16,

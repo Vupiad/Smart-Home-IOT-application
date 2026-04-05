@@ -15,6 +15,7 @@ import SceneModeCard from "../../../shared/components/SceneModeCard";
 import DeviceCard from "../../../shared/components/DeviceCard";
 import { HOME_QUICK_ACCESS_IDS, HOME_SCENE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
+import { theme } from "../../../theme";
 
 const HomeScreen: React.FC = () => {
   const {
@@ -106,22 +107,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F7FA",
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xxl,
+    borderBottomLeftRadius: theme.spacing.xl,
+    borderBottomRightRadius: theme.spacing.xl,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginTop: 12,
+    marginTop: theme.spacing.md,
   },
   greeting: {
     fontSize: 26,
     fontWeight: "700",
     color: "#FFFFFF",
-    marginBottom: 6,
+    marginBottom: theme.layout.titleSubtitleGap,
   },
   subtitle: {
     fontSize: 12,
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   },
   bellIcon: {
     position: "absolute",
-    right: 20,
+    right: theme.layout.pagePaddingX,
     top: 80,
   },
   bellBadge: {
@@ -156,20 +157,20 @@ const styles = StyleSheet.create({
   sceneModes: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.layout.pagePaddingX,
     marginTop: -16,
-    marginBottom: 20,
-    gap: 10,
+    marginBottom: theme.layout.sectionGap,
+    gap: theme.layout.cardGap,
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    paddingHorizontal: theme.layout.pagePaddingX,
+    marginBottom: theme.layout.sectionGap,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: 14,
+    marginBottom: theme.layout.contentGap,
   },
   deviceGrid: {
     flexDirection: "row",

@@ -21,7 +21,7 @@ export default function LightControl({
   return (
     <View>
       <View style={styles.lampWrap}>
-        <Ionicons name="bulb" size={140} color={detail.colorHex} />
+        <Ionicons name="bulb-outline" size={140} color={detail.colorHex} />
       </View>
 
       <View style={styles.colorRow}>

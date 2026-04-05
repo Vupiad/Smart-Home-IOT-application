@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import Header from "../../../shared/components/Header";
 import { theme } from "../../../theme";
@@ -7,10 +8,15 @@ import { useAuthContext } from "../../auth/state/AuthContext";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthContext();
+  const navigation = useNavigation<any>();
+
+  const handleAvatarPress = () => {
+    navigation.getParent()?.navigate("OwnersTab");
+  };
 
   return (
     <View style={styles.container}>
-      <Header tabName="Profile" />
+      <Header tabName="Profile" onAvatarPress={handleAvatarPress} />
 
       <View style={styles.body}>
         <Text style={styles.title}>Profile Screen</Text>
@@ -35,20 +41,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.layout.pagePaddingX,
   },
   title: {
     ...theme.typography.title,
     color: theme.colors.textPrimary,
   },
   subtitle: {
-    marginTop: 10,
+    marginTop: theme.layout.titleSubtitleGap,
     textAlign: "center",
     color: theme.colors.textSecondary,
     ...theme.typography.subtitle,
   },
   buttonWrap: {
-    marginTop: 18,
+    marginTop: theme.layout.sectionGap,
     width: 180,
   },
 });

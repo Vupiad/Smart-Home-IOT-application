@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Switch } from "react-native";
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { sharedCardStyles, sharedCardTokens } from "../styles/deviceCards";
 
@@ -9,6 +9,7 @@ interface DeviceCardProps {
   isOn: boolean;
   subtitle?: string;
   onToggle?: (value: boolean) => void;
+  onPress?: () => void;
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -17,13 +18,19 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   isOn,
   subtitle,
   onToggle,
+  onPress,
 }) => {
   const handleToggle = (value: boolean) => {
     onToggle?.(value);
   };
 
   return (
-    <View style={[sharedCardStyles.cardBase, styles.card]}>
+    <TouchableOpacity
+      style={[sharedCardStyles.cardBase, styles.card]}
+      activeOpacity={0.8}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       <View style={sharedCardStyles.iconBox}>
         <Ionicons name={icon as any} size={36} color="#555" />
       </View>
@@ -47,7 +54,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         thumbColor="#FFFFFF"
         style={sharedCardStyles.switch}
       />
-    </View>
+    </TouchableOpacity>
   );
 };
 
