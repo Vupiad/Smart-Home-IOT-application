@@ -117,6 +117,16 @@ const styles = StyleSheet.create({
     width: "100%",
     zIndex: 2,
   },
+  titleLeftWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  backButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 2,
+  },
   tabName: {
     color: theme.colors.white,
     fontSize: 35,

@@ -6,7 +6,8 @@ export interface DeviceSummary {
   type: DeviceType;
   isOn: boolean;
   room: string;
-  //deviceCountLabel: string;
+  icon?: string;
+  subtitle?: string;
 }
 
 export interface BaseDeviceDetail {
@@ -43,3 +44,32 @@ export interface LightDeviceDetail extends BaseDeviceDetail {
 }
 
 export type DeviceDetail = FanDeviceDetail | ACDeviceDetail | LightDeviceDetail;
+
+export type ToggleDevicePowerPayload = {
+  isOn: boolean;
+};
+
+export type FanDeviceUpdatePayload = {
+  level?: 1 | 2 | 3;
+  timerMinutes?: number;
+};
+
+export type ACDeviceUpdatePayload = {
+  mode?: ACMode;
+  temperature?: number;
+  fanSpeed?: 1 | 2 | 3;
+  timerMinutes?: number;
+};
+
+export type LightDeviceUpdatePayload = {
+  brightness?: number;
+  colorHex?: string;
+  scheduleFrom?: string;
+  scheduleTo?: string;
+};
+
+export type DeviceUpdatePayload =
+  | ToggleDevicePowerPayload
+  | FanDeviceUpdatePayload
+  | ACDeviceUpdatePayload
+  | LightDeviceUpdatePayload;

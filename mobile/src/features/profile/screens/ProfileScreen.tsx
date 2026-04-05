@@ -1,9 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
+import { Button } from "react-native";
 
 import Header from "../../../shared/components/Header";
 import { theme } from "../../../theme";
+import { useAuthContext } from "../../auth/state/AuthContext";
 
 export default function ProfileScreen() {
+  const { user, signOut } = useAuthContext();
+
   return (
     <View style={styles.container}>
       <Header tabName="Profile" />
@@ -13,6 +17,10 @@ export default function ProfileScreen() {
         <Text style={styles.subtitle}>
           Thong tin ca nhan va cai dat tai khoan.
         </Text>
+        <Text style={styles.subtitle}>Current user: {user?.email ?? "N/A"}</Text>
+        <View style={styles.buttonWrap}>
+          <Button title="Sign out" onPress={signOut} />
+        </View>
       </View>
     </View>
   );
@@ -38,5 +46,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: theme.colors.textSecondary,
     ...theme.typography.subtitle,
+  },
+  buttonWrap: {
+    marginTop: 18,
+    width: 180,
   },
 });

@@ -1,59 +1,81 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-gifted-charts";
 import { useNavigation } from "@react-navigation/native";
 import Header from "../../../shared/components/Header";
 import SceneModeCard from "../../../shared/components/SceneModeCard";
 import { theme } from "../../../theme";
-import WeatherBar from '../../../shared/components/WeatherBar';
-
-// 1. Dữ liệu Kịch bản (Scenes)
-const SCENES_DATA = [
-  { id: '1', name: 'Get up', icon: 'sunny-outline', color: theme.colors.weatherIcon, active: true },
-  { id: '2', name: 'Goodnight', icon: 'moon-outline', color: theme.colors.headerGrid, active: false },
-  { id: '3', name: 'Go out', icon: 'car-outline', color: theme.colors.dateIcon, active: false },
-  { id: '4', name: 'Hot weather', icon: 'thermometer-outline', color: theme.colors.dateIcon, active: false },
-  { id: '5', name: 'Cold weather', icon: 'snow-outline', color: theme.colors.humidityIcon, active: true },
-  { id: '6', name: 'Hot weather', icon: 'thermometer-outline', color: theme.colors.dateIcon, active: false },
-  { id: '7', name: 'Cold weather', icon: 'snow-outline', color: theme.colors.humidityIcon, active: true },
-
-];
+import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 
 // 2. Dữ liệu Biểu đồ (Sẵn sàng nhận từ API thực tế)
 const CHART_DATA = [
-  { id: '1', label: '1 May', value: 12 },
-  { id: '2', label: '8 May', value: 18 },
-  { id: '3', label: '15 May', value: 14 },
-  { id: '4', label: '22 May', value: 21.8, isHighlight: true },
-  { id: '5', label: '29 May', value: 16 },
+  { id: "1", label: "1 May", value: 12 },
+  { id: "2", label: "8 May", value: 18 },
+  { id: "3", label: "15 May", value: 14 },
+  { id: "4", label: "22 May", value: 21.8, isHighlight: true },
+  { id: "5", label: "29 May", value: 16 },
 ];
 
 // 3. Dữ liệu Danh sách tiêu thụ
 const CONSUMPTION_LIST = [
-  { id: '1', name: 'Light', count: '4 devices', kwh: '326 kWh', icon: 'bulb-outline', color: theme.colors.weatherIcon },
-  { id: '2', name: 'Air Conditioner', count: '2 devices', kwh: '126 kWh', icon: 'snow-outline', color: theme.colors.humidityIcon },
-  { id: '3', name: 'Washing Machine', count: '1 device', kwh: '56 kWh', icon: 'shirt-outline', color: theme.colors.headerGrid },
-  { id: '4', name: 'Smart Door', count: '1 device', kwh: '12 kWh', icon: 'lock-closed-outline', color: theme.colors.dateIcon },
+  {
+    id: "1",
+    name: "Light",
+    count: "4 devices",
+    kwh: "326 kWh",
+    icon: "bulb-outline",
+    color: theme.colors.weatherIcon,
+  },
+  {
+    id: "2",
+    name: "Air Conditioner",
+    count: "2 devices",
+    kwh: "126 kWh",
+    icon: "snow-outline",
+    color: theme.colors.humidityIcon,
+  },
+  {
+    id: "3",
+    name: "Washing Machine",
+    count: "1 device",
+    kwh: "56 kWh",
+    icon: "shirt-outline",
+    color: theme.colors.headerGrid,
+  },
+  {
+    id: "4",
+    name: "Smart Door",
+    count: "1 device",
+    kwh: "12 kWh",
+    icon: "lock-closed-outline",
+    color: theme.colors.dateIcon,
+  },
 ];
 
 export default function AutomationScreen() {
-  const [scenes, setScenes] = useState(SCENES_DATA);
+  const { scenes, setSceneActive } = useSmartHomeContext();
   const [isModalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState("");
   const navigation = useNavigation<any>();
   const handleToggleScene = (id: string, newValue: boolean) => {
-    setScenes(prev => prev.map(s => s.id === id ? { ...s, active: newValue } : s));
+    setSceneActive(id, newValue);
   };
-  const maxChartValue = Math.max(...CHART_DATA.map(d => d.value));
+  const maxChartValue = Math.max(...CHART_DATA.map((d) => d.value));
   const MAX_BAR_HEIGHT = 120;
 
   return (
     <View style={styles.container}>
-      <Header
-        tabName="Automation"
-        onAddPress={() => setModalVisible(true)}
-      />
+      <Header tabName="Automation" onAddPress={() => setModalVisible(true)} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -66,8 +88,8 @@ export default function AutomationScreen() {
               key={item.id}
               name={item.name}
               icon={item.icon}
-              iconColor={item.color}
-              isActive={item.active}
+              iconColor={item.iconColor}
+              isActive={item.isActive}
               onToggle={(val) => handleToggleScene(item.id, val)}
             />
           ))}
@@ -79,7 +101,11 @@ export default function AutomationScreen() {
             <Text style={styles.sectionTitle}>Consumption</Text>
             <TouchableOpacity style={styles.dropdownBtn}>
               <Text style={styles.dropdownText}>This Month</Text>
-              <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={theme.colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
 
@@ -99,7 +125,12 @@ export default function AutomationScreen() {
                     <View
                       style={[
                         styles.bar,
-                        { height: barHeight, backgroundColor: item.isHighlight ? theme.colors.headerBlue : '#DDE4EE' }
+                        {
+                          height: barHeight,
+                          backgroundColor: item.isHighlight
+                            ? theme.colors.headerBlue
+                            : "#DDE4EE",
+                        },
                       ]}
                     />
                     <Text style={styles.barLabel}>{item.label}</Text>
@@ -113,14 +144,22 @@ export default function AutomationScreen() {
         {/* DANH SÁCH THIẾT BỊ TIÊU THỤ */}
         <View style={styles.sectionContainer}>
           {/* Thêm dòng Text tiêu đề này vào ngay trên hàm map */}
-          <Text style={[styles.sectionTitle, { marginBottom: theme.spacing.md }]}>
+          <Text
+            style={[styles.sectionTitle, { marginBottom: theme.spacing.md }]}
+          >
             Device Power Consumption
           </Text>
 
           {CONSUMPTION_LIST.map((item) => (
             <View key={item.id} style={styles.deviceRow}>
-              <View style={[styles.iconBox, { backgroundColor: `${item.color}20` }]}>
-                <Ionicons name={item.icon as any} size={24} color={item.color} />
+              <View
+                style={[styles.iconBox, { backgroundColor: `${item.color}20` }]}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={24}
+                  color={item.color}
+                />
               </View>
 
               <View style={styles.deviceInfo}>
@@ -132,7 +171,6 @@ export default function AutomationScreen() {
             </View>
           ))}
         </View>
-
       </ScrollView>
 
       {/* MODAL THÊM KỊCH BẢN MỚI */}
@@ -152,7 +190,10 @@ export default function AutomationScreen() {
               autoFocus={true}
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelBtn}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.cancelBtn}
+              >
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -161,7 +202,9 @@ export default function AutomationScreen() {
                   if (newName.trim()) {
                     setModalVisible(false);
                     // Ép kiểu any để tránh lỗi TypeScript lặt vặt
-                    (navigation as any).navigate("AddAutomation", { automationName: newName });
+                    (navigation as any).navigate("AddAutomation", {
+                      automationName: newName,
+                    });
                     setNewName("");
                   }
                 }}
@@ -190,13 +233,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     paddingHorizontal: 20,
     gap: 12,
     marginTop: 20,
-    width: '100%',
+    width: "100%",
   },
   sectionContainer: {
     paddingHorizontal: theme.spacing.lg,
@@ -280,21 +323,82 @@ const styles = StyleSheet.create({
     color: theme.colors.headerBlue,
   },
 
-  barLabel: { fontSize: 11, color: theme.colors.textSecondary, fontWeight: "500" },
-  tooltip: { backgroundColor: theme.colors.textPrimary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, position: "absolute", top: -25, zIndex: 10 },
+  barLabel: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontWeight: "500",
+  },
+  tooltip: {
+    backgroundColor: theme.colors.textPrimary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    position: "absolute",
+    top: -25,
+    zIndex: 10,
+  },
   tooltipText: { color: theme.colors.white, fontSize: 10, fontWeight: "bold" },
-  chartWrapper: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", height: 160, paddingTop: 20 },
+  chartWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    height: 160,
+    paddingTop: 20,
+  },
   barCol: { alignItems: "center", width: 40 },
   bar: { width: 12, borderRadius: 6, marginBottom: 8 },
 
   // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", paddingHorizontal: theme.spacing.xl },
-  modalContent: { backgroundColor: theme.colors.white, borderRadius: theme.radius.lg, padding: theme.spacing.xl, shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
-  modalTitle: { ...theme.typography.title, fontSize: 18, color: theme.colors.textPrimary, marginBottom: theme.spacing.md, textAlign: "center" },
-  input: { borderWidth: 1, borderColor: "#E8ECF2", borderRadius: theme.radius.md, paddingHorizontal: theme.spacing.md, paddingVertical: 12, fontSize: 15, color: theme.colors.textPrimary, backgroundColor: "#F9FAFC", marginBottom: theme.spacing.xl },
-  modalActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    paddingHorizontal: theme.spacing.xl,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.xl,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    ...theme.typography.title,
+    fontSize: 18,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E8ECF2",
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+    backgroundColor: "#F9FAFC",
+    marginBottom: theme.spacing.xl,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   cancelBtn: { paddingVertical: 10, paddingHorizontal: 15 },
-  cancelText: { color: theme.colors.textSecondary, fontSize: 16, fontWeight: "600" },
-  makeAutoBtn: { backgroundColor: theme.colors.headerBlue, paddingVertical: 12, paddingHorizontal: 24, borderRadius: theme.radius.round },
+  cancelText: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  makeAutoBtn: {
+    backgroundColor: theme.colors.headerBlue,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: theme.radius.round,
+  },
   makeAutoText: { color: theme.colors.white, fontSize: 16, fontWeight: "600" },
 });

@@ -1,6 +1,10 @@
 # Mobile App - Quick Start Guide for Team Members
 
-Hướng dẫn cho các thành viên pull code về và code screen của mình.
+Note:
+Tài khoản demo:
+
+Email: demo@smarthome.app
+Password: 123456
 
 ---
 
@@ -11,7 +15,6 @@ Hướng dẫn cho các thành viên pull code về và code screen của mình.
 ```powershell
 # Kiểm tra xem cài rồi chưa
 node --version
-yarn --version
 ```
 
 Nếu chưa cài, tải từ: [nodejs.org](https://nodejs.org/)
@@ -47,22 +50,14 @@ git pull origin mobile
 
 ```powershell
 cd mobile
-yarn install
+npm install
 ```
-
-(Nếu bị lỗi yarn, dùng `npm install` thay)
 
 ---
 
 ## **3️⃣ Chạy App**
 
 Ở folder `mobile`, chạy:
-
-```powershell
-yarn start
-```
-
-Hoặc nếu dùng npm:
 
 ```powershell
 npm start

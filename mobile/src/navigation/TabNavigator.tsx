@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Text, View, Image } from "react-native";
-import HomeScreen from "../features/home/HomeScreen";
+import HomeScreen from "../features/home/screens/HomeScreen";
 import ControlScreen from "../features/control/screens/ControlScreen";
 import DeviceDetailScreen from "../features/control/screens/DeviceDetailScreen";
 import AutomationScreen from "../features/automation/screens/AutomationScreen";

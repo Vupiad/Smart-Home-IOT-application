@@ -10,6 +10,7 @@ type HeaderProps = {
   humidity?: string;
   dateLabel?: string;
   avatarUri?: string;
+  onBackPress?: () => void;
   onAvatarPress?: () => void;
   onAddPress?: () => void;
 };
@@ -23,6 +24,7 @@ export default function Header({
   humidity = "70%",
   dateLabel = "Wed, May 24th",
   avatarUri = DEFAULT_AVATAR, // from be later
+  onBackPress,
   onAvatarPress,
   onAddPress,
 }: HeaderProps) {
@@ -87,15 +89,20 @@ export default function Header({
         </View>
 
         <View style={styles.titleRow}>
-          <Text style={styles.tabName}>{tabName}</Text>
+          <View style={styles.titleLeftWrap}>
+            {onBackPress && (
+              <Pressable onPress={onBackPress} style={styles.backButton}>
+                <Ionicons name="chevron-back" size={30} color="#fff" />
+              </Pressable>
+            )}
+            <Text style={styles.tabName}>{tabName}</Text>
+          </View>
           {onAddPress && (
             <Pressable onPress={onAddPress} style={styles.addButton}>
               <Ionicons name="add" size={40} color="#fff" />
             </Pressable>
           )}
         </View>
-
-
       </View>
     </SafeAreaView>
   );

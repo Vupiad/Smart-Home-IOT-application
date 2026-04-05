@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { Text, StyleSheet, Switch, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { sharedCardStyles, sharedCardTokens } from "../styles/deviceCards";
 
 interface SceneModeCardProps {
   name: string;
@@ -10,24 +11,30 @@ interface SceneModeCardProps {
   onToggle?: (value: boolean) => void;
 }
 
-const SceneModeCard: React.FC<SceneModeCardProps> = ({ name, icon, iconColor, isActive, onToggle }) => {
-  const [enabled, setEnabled] = useState(isActive);
-
+const SceneModeCard: React.FC<SceneModeCardProps> = ({
+  name,
+  icon,
+  iconColor,
+  isActive,
+  onToggle,
+}) => {
   const handleToggle = (value: boolean) => {
-    setEnabled(value);
     onToggle?.(value);
   };
 
   return (
-    <TouchableOpacity style={[styles.card, enabled && styles.cardActive]} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[sharedCardStyles.cardBase, styles.card, isActive && sharedCardStyles.cardActive]}
+      activeOpacity={0.7}
+    >
       <Ionicons name={icon as any} size={40} color={iconColor} />
       <Text style={styles.name}>{name}</Text>
       <Switch
-        value={enabled}
+        value={isActive}
         onValueChange={handleToggle}
-        trackColor={{ false: '#E0E0E0', true: '#3B82F6' }}
+        trackColor={{ false: "#E0E0E0", true: "#3B82F6" }}
         thumbColor="#FFFFFF"
-        style={styles.switch}
+        style={sharedCardStyles.switch}
       />
     </TouchableOpacity>
   );
@@ -35,31 +42,16 @@ const SceneModeCard: React.FC<SceneModeCardProps> = ({ name, icon, iconColor, is
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '30%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardActive: {
-    borderWidth: 2,
-    borderColor: '#3B82F6',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "30%",
   },
   name: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: sharedCardTokens.subtitleFontSize,
+    fontWeight: "600",
+    color: sharedCardTokens.titleInactiveColor,
     marginTop: 8,
     marginBottom: 6,
-  },
-  switch: {
-    transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }],
   },
 });
 

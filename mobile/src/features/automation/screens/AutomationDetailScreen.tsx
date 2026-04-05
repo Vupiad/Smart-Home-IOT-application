@@ -1,29 +1,39 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "../../../shared/components/Header";
 import DeviceCard from "../../../shared/components/DeviceCard";
 import { theme } from "../../../theme";
+import {
+  AUTOMATION_AVAILABLE_SCENES,
+  AutomationDeviceItem,
+} from "../../../shared/constants/automations";
 
-// Dữ liệu mẫu (Có thể đưa vào route.params nếu muốn truyền từ trang trước)
-const INITIAL_DEVICES = [
-  { id: "1", name: "Air condition", status: "22 degree", isActive: true, icon: "snow-outline" },
-  { id: "2", name: "Smart Light", status: "Warm White", isActive: true, icon: "sunny-outline" },
-  { id: "3", name: "Curtains", status: "Open 80%", isActive: true, icon: "unfold-more-outline" },
-];
+const INITIAL_DEVICES = AUTOMATION_AVAILABLE_SCENES["Get Up"];
 
 export default function AutomationDetailScreen({ navigation, route }: any) {
-  const [devices, setDevices] = useState(INITIAL_DEVICES);
+  const [devices, setDevices] = useState<AutomationDeviceItem[]>(INITIAL_DEVICES);
 
   // Lấy tên kịch bản từ màn hình trước truyền sang
   const automationName = route.params?.automationName || "Automation Detail";
 
   // Hàm xử lý khi bật/tắt thiết bị trong danh sách
   const handleToggleDevice = (id: string) => {
-    setDevices(prev => prev.map(dev =>
-      dev.id === id ? { ...dev, isActive: !dev.isActive } : dev
-    ));
+    setDevices((prev) =>
+      prev.map((device) =>
+        device.id === id
+          ? { ...device, isActive: !device.isActive }
+          : device,
+      ),
+    );
   };
 
   // Hàm xử lý khi nhấn Save
@@ -73,8 +83,7 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
                 name={device.name}
                 subtitle={device.status}
                 isOn={device.isActive}
-                icon={device.icon as any}
-                // Giả sử DeviceCard của bạn có prop xử lý khi nhấn Switch
+                icon={device.icon}
                 onToggle={() => handleToggleDevice(device.id)}
               />
             </View>
