@@ -1,0 +1,10 @@
+{
+  "users": [],
+  "devices": [],
+  "modes": [],
+  "_meta": {
+    "next_user_id": 1,
+    "next_device_id": 1,
+    "next_mode_id": 1
+  }
+}
