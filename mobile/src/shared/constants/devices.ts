@@ -107,12 +107,7 @@ export const HOME_QUICK_ACCESS_IDS = [
   "device-ac-living-room",
   "device-fan-living-room",
 ];
-export const CONTROL_DEVICE_IDS = [
-  "device-fan-kitchen",
-  "device-ac-living-room",
-  "device-light-kitchen",
-  "device-door-front",
-];
+export const CONTROL_DEVICE_IDS = DEVICE_CATALOG.map((device) => device.id);
 
 export { HOME_SCENE_IDS } from "./automations";
 

@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: theme.colors.headerBlue,
-    height: 250,
+    height: 240,
     paddingTop: 10,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -102,15 +102,9 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  // tabName: {
-  //   marginTop: 35,
-  //   color: theme.colors.white,
-  //   fontSize: 35,
-  //   lineHeight: 42,
-  //   fontWeight: "700",
-  // },
+
   titleRow: {
-    marginTop: 10,
+    marginTop: -40,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -139,8 +133,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   illustrationWrap: {
-    bottom: -40,
-    right: -100,
+    bottom: -10,
+    right: -150,
     opacity: 0.6,
   },
   illustrationPanel: {
