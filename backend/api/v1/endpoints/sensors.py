@@ -1,19 +1,17 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from backend.database.nosql.mongo_sensor_repository import MongoSensorRepository
+from api.deps import get_sensor_repo
 import os
 
 router = APIRouter()
 
 # Initialize the repository (In a real app, use a FastAPI Dependency)
-repo = MongoSensorRepository(
-    uri=os.getenv("MONGO_URL"), 
-    db_name="smarthome_telemetry"
-)
 
 @router.get("/{topic}/history")
 async def get_history(
     topic: str, 
-    limit: int = Query(default=20, le=100)
+    limit: int = Query(default=20, le=100),
+    repo: MongoSensorRepository = Depends(get_sensor_repo)
 ):
     """
     Returns the most recent readings for a specific topic (e.g., V1, V2).
