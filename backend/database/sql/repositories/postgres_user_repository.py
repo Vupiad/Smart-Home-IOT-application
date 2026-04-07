@@ -1,7 +1,7 @@
 from typing import Optional
 from psycopg import AsyncConnection
-from models.user import User
-from .repository import IUserRepository
+from database.models.user import User
+from ...repository import IUserRepository
 
 class PostgresUserRepository(IUserRepository):
     def __init__(self, connection: AsyncConnection):

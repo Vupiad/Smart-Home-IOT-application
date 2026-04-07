@@ -1,6 +1,6 @@
 import os
 from .mongo_database_manager import MongoManager
-from database_manager import IDatabaseManager
+from database.database_manager import IDatabaseManager
 
 class NoSQLFactory:
     @staticmethod

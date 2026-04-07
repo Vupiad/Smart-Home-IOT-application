@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from models.user import User
-from models.mode import Mode
-from backend.database.sql.models.device import Device
+from database.models.user import User
+from database.models.mode import Mode
+from database.models.device import Device
 
 
 class IUserRepository(ABC):

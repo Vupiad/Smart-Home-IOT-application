@@ -1,13 +1,18 @@
 from fastapi import FastAPI
+
 from fastapi.middleware.cors import CORSMiddleware
+
 from api.v1.endpoints import sensors, auth, devices, modes, device_control
-from api.init_user import initialize_default_user
-from database.sql.database_factory import db_instance
+
 from services.mqtt_service import MqttService
+
 from dotenv import load_dotenv
+
 import os
 
 load_dotenv()
+
+from database.sql.database_factory import db_instance
 
 app = FastAPI(
     title="Vũ's Smart Home API",
@@ -65,9 +70,11 @@ async def startup_event():
     print(f" [CONFIG] Database Type: {db_type}")
     
     try:
-        # Connect to database
-        await db_instance.connect()
-        
+        # Initialize database
+        if db_type == "postgres":
+            await db_instance.connect()
+            print(f" [SUCCESS] Database connection pool initialized")
+
         # Initialize MQTT service
         mqtt_broker = os.getenv("MQTT_BROKER", "localhost")
         mqtt_port = int(os.getenv("MQTT_PORT", "1883"))
@@ -77,12 +84,7 @@ async def startup_event():
         mqtt_service.start()
         print(f" [SUCCESS] MQTT Service connected")
         
-        # Initialize default user account
-        default_user = await initialize_default_user(db_instance)
-        if default_user:
-            print(f" [SUCCESS] Ready for authentication")
-            print(f"           Default login: admin / admin123")
-        
+  
         print(" [STARTUP] All systems initialized")
         print("="*60 + "\n")
         
@@ -97,8 +99,12 @@ async def shutdown_event():
     """Cleanup on application shutdown."""
     print("\n[SHUTDOWN] Closing connections...")
     mqtt_service = MqttService.get_instance()
-    mqtt_service.stop()
+    await mqtt_service.stop()
     print("[SHUTDOWN] MQTT Service stopped")
-    await db_instance.disconnect()
-    print("[SHUTDOWN] Database disconnected")
+    
+    db_type = os.getenv("DATABASE_TYPE", "postgres")
+    if db_type == "postgres":
+        await db_instance.disconnect()
+        print("[SHUTDOWN] Database disconnected")
+    
     print("[SHUTDOWN] Goodbye!\n")

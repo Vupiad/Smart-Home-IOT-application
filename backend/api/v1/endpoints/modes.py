@@ -4,10 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from models.mode import Mode
+from database.models.mode import Mode
 from api.deps import get_mode_repo, get_user_repo
-from api.security import verify_token
-from backend.database.sql.repositories.repository import IModeRepository, IUserRepository
+from database.repository import IModeRepository, IUserRepository
 
 router = APIRouter()
 
@@ -37,32 +36,11 @@ class ModeResponse(BaseModel):
     created_at: Optional[str] = None
 
 
-def get_current_user_id(token: str = Query(...)) -> int:
-    """
-    Extract and verify user ID from authentication token.
-    
-    Args:
-        token: JWT token from query parameter
-        
-    Returns:
-        user_id if token is valid
-        
-    Raises:
-        HTTPException: If token is invalid or expired
-    """
-    user_id = verify_token(token)
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication token"
-        )
-    return user_id
-
 
 @router.post("/", response_model=ModeResponse)
 async def create_mode(
     request: ModeCreateRequest,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> ModeResponse:
@@ -70,7 +48,7 @@ async def create_mode(
     Create a new automation mode.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Body:
         - name: Mode name
@@ -111,14 +89,14 @@ async def create_mode(
 
 @router.get("/", response_model=List[ModeResponse])
 async def list_modes(
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> List[ModeResponse]:
     """
     List all automation modes created by the current user.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     """
     modes = await mode_repo.get_by_user(user_id)
     
@@ -138,14 +116,14 @@ async def list_modes(
 @router.get("/{mode_id}", response_model=ModeResponse)
 async def get_mode(
     mode_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> ModeResponse:
     """
     Get a specific automation mode by ID.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - mode_id: Mode ID
@@ -178,14 +156,14 @@ async def get_mode(
 async def update_mode(
     mode_id: int,
     request: ModeUpdateRequest,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> ModeResponse:
     """
     Update an automation mode.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - mode_id: Mode ID
@@ -227,14 +205,14 @@ async def update_mode(
 @router.delete("/{mode_id}")
 async def delete_mode(
     mode_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> dict:
     """
     Delete an automation mode.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - mode_id: Mode ID
@@ -266,14 +244,14 @@ async def delete_mode(
 @router.post("/{mode_id}/activate")
 async def activate_mode(
     mode_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> dict:
     """
     Activate an automation mode.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - mode_id: Mode ID
@@ -305,14 +283,14 @@ async def activate_mode(
 @router.post("/{mode_id}/deactivate")
 async def deactivate_mode(
     mode_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> dict:
     """
     Deactivate an automation mode.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - mode_id: Mode ID

@@ -19,6 +19,9 @@ class MongoManager(IDatabaseManager):
             self._client.close()
             print(" [DB] MongoDB Connection Closed.")
 
+    async def get_connection(self):
+        return await super().get_connection()
+    
     def get_db(self):
         return self._db
 
