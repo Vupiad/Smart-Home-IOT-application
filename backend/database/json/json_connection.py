@@ -1,7 +1,7 @@
 """Async context manager for JSON file connections."""
 
 import asyncio
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from pathlib import Path
 import json as json_lib
 import aiofiles
@@ -15,56 +15,54 @@ class JsonConnection:
     locking for safe concurrent access to the JSON file.
     """
 
-    def __init__(self, file_path: str, lock: asyncio.Lock):
+    def __init__(self, file_path: str, lock: Optional[asyncio.Lock] = None):
         """
         Initialize JsonConnection.
         
         Args:
             file_path: Path to the JSON data file
-            lock: Async lock for thread-safe file access
+            lock: Async lock for thread-safe file access (unused, kept for compatibility)
         """
         self.file_path = Path(file_path)
-        self.lock = lock
+        self.lock = lock  # Kept for backwards compatibility but not used
         self._data: Dict[str, Any] = {}
 
     async def load(self) -> Dict[str, Any]:
         """
-        Load data from JSON file with lock protection.
+        Load data from JSON file.
         
         Returns:
             Dictionary containing users, devices, modes, and metadata
         """
-        async with self.lock:
-            if not self.file_path.exists():
-                # Initialize with default structure
-                self._data = {
+        if not self.file_path.exists():
+            # Initialize with default structure
+            self._data = {
+                "users": [],
+                "devices": [],
+                "modes": [],
+                "_meta": {"next_user_id": 1, "next_device_id": 1, "next_mode_id": 1}
+            }
+            await self.save()
+        else:
+            async with aiofiles.open(self.file_path, 'r') as f:
+                content = await f.read()
+                self._data = json_lib.loads(content) if content else {
                     "users": [],
                     "devices": [],
                     "modes": [],
                     "_meta": {"next_user_id": 1, "next_device_id": 1, "next_mode_id": 1}
                 }
-                await self.save()
-            else:
-                async with aiofiles.open(self.file_path, 'r') as f:
-                    content = await f.read()
-                    self._data = json_lib.loads(content) if content else {
-                        "users": [],
-                        "devices": [],
-                        "modes": [],
-                        "_meta": {"next_user_id": 1, "next_device_id": 1, "next_mode_id": 1}
-                    }
         return self._data
 
     async def save(self) -> None:
         """
-        Save in-memory data to JSON file with lock protection.
+        Save in-memory data to JSON file.
         
-        This method ensures atomic writes and prevents partial data corruption.
+        This method ensures atomic writes to prevent data corruption.
         """
-        async with self.lock:
-            async with aiofiles.open(self.file_path, 'w') as f:
-                content = json_lib.dumps(self._data, indent=2, default=str)
-                await f.write(content)
+        async with aiofiles.open(self.file_path, 'w') as f:
+            content = json_lib.dumps(self._data, indent=2, default=str)
+            await f.write(content)
 
     def get_data(self) -> Dict[str, Any]:
         """

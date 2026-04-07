@@ -1,10 +1,65 @@
 {
-  "users": [],
-  "devices": [],
-  "modes": [],
+  "users": [
+    {
+      "id": 1,
+      "username": "demouser",
+      "email": "user@example.com",
+      "hashed_password": "$pbkdf2-sha256$29000$JORcaw0B4Jzz3pszJgTA2A$zyI7TQp19tupnBjU7biemzgj/SdiaFPo8PdK1a.8RIU",
+      "created_at": null
+    }
+  ],
+  "devices": [
+    {
+      "id": 1,
+      "owner_id": 1,
+      "name": "Living Room light",
+      "device_type": "light",
+      "base_topic": "yolohome/V10",
+      "settings": {},
+      "last_online": "2026-04-07T16:36:22.109876",
+      "state": {},
+      "is_online": false,
+      "last_seen": null,
+      "supported_actions": []
+    },
+    {
+      "id": 2,
+      "owner_id": 1,
+      "name": "Living Room fan",
+      "device_type": "light",
+      "base_topic": "yolohome/V12",
+      "settings": {},
+      "last_online": "2026-04-07T16:37:49.662220",
+      "state": {},
+      "is_online": false,
+      "last_seen": null,
+      "supported_actions": []
+    }
+  ],
+  "modes": [
+    {
+      "id": 2,
+      "user_id": 1,
+      "name": "Goodmorning Mode",
+      "actions": [
+        {
+          "device_id": 1,
+          "action": "set_brightness",
+          "value": 70
+        },
+        {
+          "device_id": 2,
+          "action": "turn on",
+          "value": 50
+        }
+      ],
+      "is_active": false,
+      "created_at": "2026-04-07T16:53:39.046377"
+    }
+  ],
   "_meta": {
-    "next_user_id": 1,
-    "next_device_id": 1,
-    "next_mode_id": 1
+    "next_user_id": 2,
+    "next_device_id": 3,
+    "next_mode_id": 3
   }
 }

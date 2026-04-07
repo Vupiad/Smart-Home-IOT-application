@@ -1,67 +1,57 @@
 """Security utilities for authentication and password hashing."""
 
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
+import hashlib
 from passlib.context import CryptContext
-import os
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing using pbkdf2 (pure Python, no compilation needed)
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-# JWT Configuration
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-key-change-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours
+
+def _prehash_password(password: str) -> str:
+    """
+    Pre-hash password with SHA256 to normalize to 64 bytes.
+    
+    This ensures consistent behavior and adds an extra layer of security.
+    The SHA256 hash is always 64 characters (hex encoded).
+    
+    Args:
+        password: Raw password string
+        
+    Returns:
+        SHA256 hash in hex format (64 characters)
+    """
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """
+    Hash a password using SHA256 + PBKDF2.
+    
+    Args:
+        password: Raw password string
+        
+    Returns:
+        PBKDF2 hash of the SHA256-prehashed password
+    """
+    # First normalize with SHA256, then PBKDF2
+    prehashed = _prehash_password(password)
+    return pwd_context.hash(prehashed)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
-    Create a JWT access token.
+    Verify a password against its PBKDF2 hash.
     
     Args:
-        data: Dictionary to encode in token
-        expires_delta: Optional expiration time delta
+        plain_password: Raw password to verify
+        hashed_password: PBKDF2 hash to check against
         
     Returns:
-        Encoded JWT token string
+        True if password matches, False otherwise
     """
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    # Pre-hash with same method before verification
+    prehashed = _prehash_password(plain_password)
+    return pwd_context.verify(prehashed, hashed_password)
 
 
-def verify_token(token: str) -> Optional[int]:
-    """
-    Verify JWT token and extract user_id.
-    
-    Args:
-        token: JWT token string
-        
-    Returns:
-        user_id if token is valid, None otherwise
-    """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: Optional[int] = payload.get("sub")
-        if user_id is None:
-            return None
-        return user_id
-    except JWTError:
-        return None
+

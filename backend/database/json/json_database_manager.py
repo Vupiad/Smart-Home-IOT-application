@@ -3,7 +3,7 @@
 import asyncio
 from typing import AsyncGenerator, Optional
 from pathlib import Path
-from backend.database.database_manager import IDatabaseManager
+from database.database_manager import IDatabaseManager
 from .json_connection import JsonConnection
 
 
@@ -17,10 +17,10 @@ class JsonDatabaseManager(IDatabaseManager):
     
     For a single-user application, JSON file storage avoids the complexity
     of relational databases while maintaining full ACID-like behavior through
-    atomic file operations and async locking.
+    atomic file operations.
     """
 
-    def __init__(self, file_path: str = "backend/data.json"):
+    def __init__(self, file_path: str = "data.json"):
         """
         Initialize JsonDatabaseManager.
         
@@ -28,7 +28,6 @@ class JsonDatabaseManager(IDatabaseManager):
             file_path: Path to JSON data file (default: backend/data.json)
         """
         self.file_path = Path(file_path)
-        self._lock = asyncio.Lock()
         self._initialized = False
 
     async def connect(self) -> None:
@@ -40,7 +39,7 @@ class JsonDatabaseManager(IDatabaseManager):
         """
         if not self._initialized:
             # Load or initialize the JSON file
-            conn = JsonConnection(str(self.file_path), self._lock)
+            conn = JsonConnection(str(self.file_path), None)
             await conn.load()
             self._initialized = True
             print(f" [DB] JSON database initialized at {self.file_path}")
@@ -61,12 +60,14 @@ class JsonDatabaseManager(IDatabaseManager):
         
         This generator pattern matches the PostgreSQL connection pool interface,
         allowing seamless substitution. Each request gets its own JsonConnection
-        instance with shared lock protection.
+        instance.
+        
+        For single-user JSON storage, we don't need distributed locking.
         
         Yields:
             JsonConnection instance with data loaded from file
         """
-        conn = JsonConnection(str(self.file_path), self._lock)
+        conn = JsonConnection(str(self.file_path), None)
         await conn.load()
         try:
             yield conn

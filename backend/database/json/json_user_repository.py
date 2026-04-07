@@ -1,8 +1,8 @@
 """JSON-based User Repository implementation."""
 
 from typing import Optional, List
-from models.user import User
-from backend.database.sql.repositories.repository import IUserRepository
+from database.models.user import User
+from database.repository import IUserRepository
 from .json_connection import JsonConnection
 
 

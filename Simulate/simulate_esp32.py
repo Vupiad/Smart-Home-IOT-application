@@ -9,211 +9,249 @@ import os
 BROKER = os.getenv("MQTT_BROKER", "localhost")
 PORT = int(os.getenv("MQTT_PORT", 1883))
 
-# Legacy topics for sensor data
-LEGACY_TOPICS = {
-    "TEMP": "V1",
-    "HUMID": "V2",
-    "LIGHT": "V3",
-    "FAN_STATUS": "V12",
-    "FACE_AI": "V14"
-}
+# ============ ESP32 V-Channel Topics (yolohome/V*) ============
+MQTT_TOPIC_V1 = "yolohome/V1"    # Temperature sensor
+MQTT_TOPIC_V2 = "yolohome/V2"    # Humidity sensor
+MQTT_TOPIC_V3 = "yolohome/V3"    # Light sensor
+MQTT_TOPIC_V10 = "yolohome/V10"  # LED on/off ("1" or "0")
+MQTT_TOPIC_V11 = "yolohome/V11"  # LED color (hex, csv, json, or named color)
+MQTT_TOPIC_V12 = "yolohome/V12"  # Fan speed (0-100)
+MQTT_TOPIC_V13 = "yolohome/V13"  # Feedback messages
+#MQTT_TOPIC_V14 = "yolohome/V14"  # FaceAI result
 
-# Virtual devices for MQTT control
-# Format: device_id -> device_config
-VIRTUAL_DEVICES = {
-    1: {
-        "name": "Living Room Light",
-        "type": "LIGHT",
-        "user_id": 1,
-        "state": {
-            "power": False,
-            "brightness": 0,
-            "color": "white"
-        }
-    },
-    2: {
-        "name": "Bedroom Fan",
-        "type": "FAN",
-        "user_id": 1,
-        "state": {
-            "power": False,
-            "speed": 0
-        }
-    },
-    3: {
-        "name": "Front Door Lock",
-        "type": "DOOR_LOCK",
-        "user_id": 1,
-        "state": {
-            "locked": True,
-            "open": False
-        }
-    },
-    4: {
-        "name": "AC Unit",
-        "type": "AC",
-        "user_id": 1,
-        "state": {
-            "power": False,
-            "temperature": 22,
-            "mode": "cool"
-        }
+# ============ Feedback Messages ============
+MSG_LED_ON = "LED turned on"
+MSG_LED_OFF = "LED turned off"
+MSG_RGB_AUTO = "LED set to auto mode"
+MSG_RGB_CHANGED = "LED color changed"
+MSG_RGB_INVALID = "Invalid color format"
+MSG_FAN_SPEED_TEMPLATE = "Fan speed set to %d%%"
+MSG_DOOR_OPEN_SUCCESS = "Door opened successfully"
+MSG_DOOR_GUEST = "Guest detected"
+
+# ============ Color Parsing Functions ============
+def parse_hex_color(color_str):
+    """Parse hex color format: #FF0000 or FF0000."""
+    hex_str = color_str.strip()
+    if hex_str.startswith('#'):
+        hex_str = hex_str[1:]
+    if len(hex_str) != 6:
+        return None
+    try:
+        r = int(hex_str[0:2], 16)
+        g = int(hex_str[2:4], 16)
+        b = int(hex_str[4:6], 16)
+        return (r, g, b)
+    except ValueError:
+        return None
+
+
+def parse_csv_color(color_str):
+    """Parse CSV color format: 255,0,0."""
+    try:
+        parts = color_str.split(',')
+        if len(parts) != 3:
+            return None
+        r = int(parts[0].strip())
+        g = int(parts[1].strip())
+        b = int(parts[2].strip())
+        if not (0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255):
+            return None
+        return (r, g, b)
+    except (ValueError, AttributeError):
+        return None
+
+
+def parse_json_color(color_str):
+    """Parse JSON color format: {"r": 255, "g": 0, "b": 0} or {"hex": "FF0000"}."""
+    try:
+        data = json.loads(color_str)
+        if "r" in data and "g" in data and "b" in data:
+            r = int(data["r"])
+            g = int(data["g"])
+            b = int(data["b"])
+            if 0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255:
+                return (r, g, b)
+        elif "hex" in data:
+            return parse_hex_color(data["hex"])
+    except (json.JSONDecodeError, ValueError, TypeError):
+        pass
+    return None
+
+
+def parse_named_color(color_name):
+    """Parse named colors: red, blue, green, white, etc."""
+    colors = {
+        "red": (255, 0, 0),
+        "orange": (255, 127, 0),
+        "yellow": (255, 255, 0),
+        "green": (0, 255, 0),
+        "cyan": (0, 255, 255),
+        "blue": (0, 0, 255),
+        "purple": (148, 0, 211),
+        "white": (255, 255, 255),
+        "off": (0, 0, 0)
     }
-}
+    return colors.get(color_name.lower())
+
+
+def parse_color(color_str):
+    """Try parsing color in multiple formats."""
+    if not color_str:
+        return None
+    
+    # Try named color first
+    result = parse_named_color(color_str)
+    if result:
+        return result
+    
+    # Try hex format
+    result = parse_hex_color(color_str)
+    if result:
+        return result
+    
+    # Try CSV format
+    result = parse_csv_color(color_str)
+    if result:
+        return result
+    
+    # Try JSON format
+    result = parse_json_color(color_str)
+    if result:
+        return result
+    
+    return None
 
 
 class ESP32Simulator:
     def __init__(self):
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.is_running = True
-        self.devices = VIRTUAL_DEVICES.copy()
+        
+        # ESP32 emulated state
+        self.led_state = False           # LED on/off
+        self.led_r = 255                # LED RGB values
+        self.led_g = 255
+        self.led_b = 255
+        self.led_auto = False           # LED auto color mode
+        self.fan_speed = 0              # Fan speed 0-100
+        self.door_state = "closed"      # Door state
+        self.face_ai_result = None      # Last FaceAI result
+        
+        # Sensor values
+        self.temperature = 26.0
+        self.humidity = 60.0
+        self.light = 500
 
     def on_connect(self, client, userdata, flags, rc, props):
         """Handle connection to MQTT broker."""
         if rc == 0:
             print(f" [MQTT] Connected to {BROKER}:{PORT}")
             
-            # Subscribe to device command topics for all devices
-            for user_id in set(d["user_id"] for d in self.devices.values()):
-                # Subscribe to all devices for this user
-                command_topic = f"home/{user_id}/+/command"
-                self.client.subscribe(command_topic, qos=1)
-                print(f" [MQTT] Subscribed to: {command_topic}")
+            # Subscribe to device control topics (V-topics)
+            self.client.subscribe(MQTT_TOPIC_V10, qos=1)
+            self.client.subscribe(MQTT_TOPIC_V11, qos=1)
+            self.client.subscribe(MQTT_TOPIC_V12, qos=1)
+            #self.client.subscribe(MQTT_TOPIC_V14, qos=1)
+            print(f" [MQTT] Subscribed to: V10, V11, V12")
             
-            # Subscribe to legacy sensor topics
-            self.client.subscribe(LEGACY_TOPICS["FAN_STATUS"], qos=0)
-            print(f" [MQTT] Subscribed to legacy: {LEGACY_TOPICS['FAN_STATUS']}")
         else:
             print(f" [ERROR] Connection failed with code {rc}")
 
     def on_message(self, client, userdata, msg):
-        """Handle incoming MQTT messages."""
+        """Handle incoming MQTT messages (V-topic protocol)."""
         payload = msg.payload.decode()
+        print(f" [MQTT] Received {msg.topic}: {payload}")
         
-        # Check if it's a device command (new protocol)
-        if msg.topic.startswith("home/") and msg.topic.endswith("/command"):
-            self._handle_device_command(msg.topic, payload)
-        # Legacy fan speed command
-        elif msg.topic == LEGACY_TOPICS["FAN_STATUS"]:
-            print(f" [LEGACY] Fan speed set to: {payload}%")
-
-    def _handle_device_command(self, topic: str, payload: str) -> None:
-        """
-        Handle device control command from MQTT.
-        
-        Topic format: home/{user_id}/{device_id}/command
-        Payload: {"action": "turn_on", "value": null, "timestamp": "..."}
-        """
-        try:
-            # Parse topic
-            parts = topic.split("/")
-            if len(parts) != 4:
-                print(f" [ERROR] Invalid topic format: {topic}")
-                return
-            
-            user_id = int(parts[1])
-            device_id = int(parts[2])
-            
-            # Parse command
-            command = json.loads(payload)
-            action = command.get("action")
-            value = command.get("value")
-            
-            # Find and execute action on device
-            if device_id not in self.devices:
-                print(f" [ERROR] Device {device_id} not found")
-                return
-            
-            device_config = self.devices[device_id]
-            
-            # Execute action
-            print(f" [CMD] Device {device_id} ({device_config['name']}): {action}={value}")
-            self._execute_action(device_id, action, value)
-            
-            # Publish status update
-            self._publish_device_status(user_id, device_id, device_config)
-            
-        except json.JSONDecodeError:
-            print(f" [ERROR] Invalid JSON payload: {payload}")
-        except Exception as e:
-            print(f" [ERROR] Error handling command: {e}")
-
-    def _execute_action(self, device_id: int, action: str, value) -> None:
-        """Execute action on device and update state."""
-        device_config = self.devices[device_id]
-        state = device_config["state"]
-        device_type = device_config["type"]
-        
-        # Light actions
-        if device_type == "LIGHT":
-            if action == "turn_on":
-                state["power"] = True
-            elif action == "turn_off":
-                state["power"] = False
-            elif action == "toggle":
-                state["power"] = not state["power"]
-            elif action == "set_brightness":
-                state["brightness"] = max(0, min(100, int(value)))
-            elif action == "set_color":
-                state["color"] = value
-        
-        # Fan actions
-        elif device_type == "FAN":
-            if action == "turn_on":
-                state["power"] = True
-            elif action == "turn_off":
-                state["power"] = False
-            elif action == "set_speed":
-                state["speed"] = max(0, min(100, int(value)))
-        
-        # Door lock actions
-        elif device_type == "DOOR_LOCK":
-            if action == "lock":
-                state["locked"] = True
-            elif action == "unlock":
-                state["locked"] = False
-        
-        # AC actions
-        elif device_type == "AC":
-            if action == "turn_on":
-                state["power"] = True
-            elif action == "turn_off":
-                state["power"] = False
-            elif action == "set_temperature":
-                state["temperature"] = max(16, min(30, int(value)))
-            elif action == "set_mode":
-                state["mode"] = value
-
-    def _publish_device_status(self, user_id: int, device_id: int, device_config: dict) -> None:
-        """Publish device status to MQTT."""
-        status_topic = f"home/{user_id}/{device_id}/status"
-        status_payload = {
-            "device_id": device_id,
-            "device_name": device_config["name"],
-            "state": device_config["state"],
-            "is_online": True,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-        
-        result = self.client.publish(
-            status_topic,
-            json.dumps(status_payload),
-            qos=1,
-            retain=False
-        )
-        
-        if result.rc == mqtt.MQTT_ERR_SUCCESS:
-            print(f" [STATUS] Published to {status_topic}: {device_config['state']}")
+        # Handle device control topics
+        if msg.topic == MQTT_TOPIC_V10:
+            self._handle_v10_led_onoff(payload)
+        elif msg.topic == MQTT_TOPIC_V11:
+            self._handle_v11_led_color(payload)
+        elif msg.topic == MQTT_TOPIC_V12:
+            self._handle_v12_fan_speed(payload)
+        # elif msg.topic == MQTT_TOPIC_V14:
+        #     self._handle_v14_faceai(payload)
+    
+    def _handle_v10_led_onoff(self, payload):
+        """Handle LED on/off command (V10: "1" or "0")."""
+        if payload == "1":
+            self.led_state = True
+            self.publish_feedback(MSG_LED_ON)
+            print(f" [LED] Turned ON")
+        elif payload == "0":
+            self.led_state = False
+            self.publish_feedback(MSG_LED_OFF)
+            print(f" [LED] Turned OFF")
         else:
-            print(f" [ERROR] Failed to publish status: rc={result.rc}")
-
-    def generate_sensor_data(self):
-        """Generates realistic sensor fluctuations."""
-        return {
-            "temp": round(random.uniform(26.0, 31.0), 2),
-            "humid": round(random.uniform(50.0, 70.0), 2),
-            "light": random.randint(300, 800)
-        }
+            print(f" [ERROR] Invalid V10 payload: {payload}")
+    
+    def _handle_v11_led_color(self, payload):
+        """Handle LED color command (V11: hex, csv, json, or named color)."""
+        payload = payload.strip()
+        
+        # Check for auto mode
+        if payload.lower() == "auto":
+            self.led_auto = True
+            self.publish_feedback(MSG_RGB_AUTO)
+            print(f" [LED] Auto color mode enabled")
+            return
+        
+        self.led_auto = False
+        
+        # Try parsing color in multiple formats
+        color = parse_color(payload)
+        if color:
+            self.led_r, self.led_g, self.led_b = color
+            if self.led_state:
+                print(f" [LED] Color set to RGB({self.led_r}, {self.led_g}, {self.led_b})")
+            self.publish_feedback(MSG_RGB_CHANGED)
+        else:
+            self.publish_feedback(MSG_RGB_INVALID)
+            print(f" [ERROR] Invalid color format: {payload}")
+    
+    def _handle_v12_fan_speed(self, payload):
+        """Handle fan speed command (V12: 0-100)."""
+        try:
+            speed = int(payload)
+            speed = max(0, min(100, speed))  # Constrain to 0-100
+            self.fan_speed = speed
+            feedback = f"Fan speed set to {speed}%"
+            self.publish_feedback(feedback)
+            print(f" [FAN] Speed set to {speed}% from payload: {payload}")
+        except ValueError:
+            print(f" [ERROR] Invalid V12 fan speed: {payload}")
+    
+    
+    def publish_feedback(self, message):
+        """Publish feedback message to V13."""
+        result = self.client.publish(MQTT_TOPIC_V13, message, qos=1, retain=False)
+        if result.rc == mqtt.MQTT_ERR_SUCCESS:
+            print(f" [V13] Feedback: {message}")
+        else:
+            print(f" [ERROR] Failed to publish feedback: rc={result.rc}")
+    
+    def publish_sensor_data(self):
+        """Publish sensor data to V1, V2, V3."""
+        self.client.publish(MQTT_TOPIC_V1, f"{self.temperature:.1f}", qos=0)
+        self.client.publish(MQTT_TOPIC_V2, f"{self.humidity:.1f}", qos=0)
+        self.client.publish(MQTT_TOPIC_V3, f"{self.light}", qos=0)
+        
+        print(f" [SEN] V1={self.temperature:.1f}°C | V2={self.humidity:.1f}% | V3={self.light}lx", end="")
+        print(f" | LED={'ON' if self.led_state else 'OFF'}(RGB={self.led_r},{self.led_g},{self.led_b}) | FAN={self.fan_speed}%")
+    
+    def update_sensor_values(self):
+        """Update sensor readings with realistic fluctuations."""
+        # Temperature fluctuation
+        self.temperature += random.uniform(-0.5, 0.5)
+        self.temperature = max(20.0, min(35.0, self.temperature))
+        
+        # Humidity fluctuation
+        self.humidity += random.uniform(-1.0, 1.0)
+        self.humidity = max(30.0, min(80.0, self.humidity))
+        
+        # Light (more random)
+        self.light = random.randint(300, 800)
 
     def start(self):
         """Start the ESP32 simulator."""
@@ -226,8 +264,9 @@ class ESP32Simulator:
             
             print(f" [MQTT] Connecting to {BROKER}:{PORT}...")
             print(f" [*] ESP32 Simulator Active")
-            print(f" [*] Virtual Devices: {len(self.devices)}")
-            print(f" [*] Sending sensor data every 5s...")
+            print(f" [*] Sensors: Temp, Humidity, Light")
+            print(f" [*] Controls: LED (on/off, color), Fan (speed 0-100)")
+            print(f" [*] Publishing sensor data every 5s...")
             
             connection_count = 0
             while self.is_running:
@@ -239,21 +278,9 @@ class ESP32Simulator:
                     except:
                         pass
                 
-                # Publish sensor data
-                data = self.generate_sensor_data()
-                self.client.publish(LEGACY_TOPICS["TEMP"], data["temp"], qos=0)
-                self.client.publish(LEGACY_TOPICS["HUMID"], data["humid"], qos=0)
-                self.client.publish(LEGACY_TOPICS["LIGHT"], data["light"], qos=0)
-                
-                # Print device states
-                device_states = ", ".join([
-                    f"{d['name']}=" + (
-                        "ON" if d['state'].get('power', False) else "OFF"
-                    )
-                    for d in self.devices.values()
-                ])
-                
-                print(f" [SEN] T:{data['temp']}°C | H:{data['humid']}% | L:{data['light']}lx | {device_states}")
+                # Update sensor values and publish
+                self.update_sensor_values()
+                self.publish_sensor_data()
                 
                 time.sleep(5)
                 connection_count += 1

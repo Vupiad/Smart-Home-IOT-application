@@ -6,13 +6,13 @@ uvicorn[standard]==0.27.1
 motor==3.6.0
 pymongo==4.9.1
 psycopg[binary]>=3.1.18
-
+psycopg_pool
 # Async File I/O
 aiofiles>=23.0.0
 
 # Security & Utils
 python-dotenv==1.0.1
 pydantic>=2.7.0
+pydantic[email]
 python-multipart==0.0.9
 passlib[bcrypt]==1.7.4
-PyJWT==2.8.0

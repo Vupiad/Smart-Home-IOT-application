@@ -1,7 +1,7 @@
 from psycopg import AsyncConnection
 from typing import Optional, List
-from models.mode import Mode
-from .repository import IModeRepository
+from database.models.mode import Mode
+from ...repository import IModeRepository
 import json
 
 class PostgresModeRepository(IModeRepository):

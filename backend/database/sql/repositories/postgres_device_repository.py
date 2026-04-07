@@ -1,7 +1,7 @@
 from psycopg import AsyncConnection
 from typing import Optional, List
-from models.device import Device
-from .repository import IDeviceRepository
+from database.models.device import Device
+from ...repository import IDeviceRepository
 import json
 
 class PostgresDeviceRepository(IDeviceRepository):

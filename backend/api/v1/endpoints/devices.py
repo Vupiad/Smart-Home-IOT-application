@@ -4,10 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from models.device import Device
+from database.models.device import Device
 from api.deps import get_device_repo, get_user_repo
-from api.security import verify_token
-from backend.database.sql.repositories.repository import IDeviceRepository, IUserRepository
+from database.repository import IDeviceRepository, IUserRepository
 
 router = APIRouter()
 
@@ -40,32 +39,11 @@ class DeviceResponse(BaseModel):
     last_online: Optional[str] = None
 
 
-def get_current_user_id(token: str = Query(...)) -> int:
-    """
-    Extract and verify user ID from authentication token.
-    
-    Args:
-        token: JWT token from query parameter
-        
-    Returns:
-        user_id if token is valid
-        
-    Raises:
-        HTTPException: If token is invalid or expired
-    """
-    user_id = verify_token(token)
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication token"
-        )
-    return user_id
-
 
 @router.post("/", response_model=DeviceResponse)
 async def create_device(
     request: DeviceCreateRequest,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> DeviceResponse:
@@ -73,7 +51,7 @@ async def create_device(
     Create a new device.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     """
     # Verify user exists
     user = await user_repo.get_by_id(user_id)
@@ -108,14 +86,14 @@ async def create_device(
 
 @router.get("/", response_model=List[DeviceResponse])
 async def list_devices(
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> List[DeviceResponse]:
     """
     List all devices owned by the current user.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     """
     devices = await device_repo.get_by_user(user_id)
     
@@ -136,14 +114,14 @@ async def list_devices(
 @router.get("/{device_id}", response_model=DeviceResponse)
 async def get_device(
     device_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
     """
     Get a specific device by ID.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - device_id: Device ID
@@ -177,14 +155,14 @@ async def get_device(
 async def update_device(
     device_id: int,
     request: DeviceUpdateRequest,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
     """
     Update a device.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - device_id: Device ID
@@ -229,14 +207,14 @@ async def update_device(
 @router.delete("/{device_id}")
 async def delete_device(
     device_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> dict:
     """
     Delete a device.
     
     Query Parameters:
-        - token: Authentication JWT token
+        - user_id: User ID
     
     Path Parameters:
         - device_id: Device ID

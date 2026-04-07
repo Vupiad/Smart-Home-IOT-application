@@ -1,8 +1,8 @@
 """JSON-based Device Repository implementation."""
 
 from typing import Optional, List
-from models.device import Device
-from backend.database.sql.repositories.repository import IDeviceRepository
+from database.models.device import Device
+from database.repository import IDeviceRepository
 from .json_connection import JsonConnection
 
 

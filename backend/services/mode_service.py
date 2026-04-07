@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from models.mode import Mode
 from models.device import Device
-from backend.database.sql.repositories.repository import IModeRepository, IDeviceRepository
+from backend.database.repository import IModeRepository, IDeviceRepository
 from services.device_service import DeviceService
 from services.mqtt_service import MqttService
 
@@ -126,13 +126,7 @@ class ModeService:
         
         for action_item in mode.actions:
             device_id = action_item.get("device_id")
-            action = action_item.get("action")
             value = action_item.get("value")
-            delay = action_item.get("delay", 0)
-            
-            # Wait before next action
-            if delay > 0:
-                await asyncio.sleep(delay)
             
             # Execute action
             try:
@@ -143,7 +137,6 @@ class ModeService:
                 success = await self._device_service.control_device(
                     user_id=user_id,
                     device_id=device_id,
-                    action=action,
                     value=value
                 )
                 
@@ -154,7 +147,6 @@ class ModeService:
                 
                 results["action_results"].append({
                     "device_id": device_id,
-                    "action": action,
                     "value": value,
                     "success": success,
                     "timestamp": datetime.now().isoformat()
@@ -164,7 +156,6 @@ class ModeService:
                 results["failed_actions"] += 1
                 results["action_results"].append({
                     "device_id": device_id,
-                    "action": action,
                     "value": value,
                     "success": False,
                     "error": str(e),
@@ -232,7 +223,6 @@ class ModeService:
             results: Shared results dict to update
         """
         device_id = action_item.get("device_id")
-        action = action_item.get("action")
         value = action_item.get("value")
         delay = action_item.get("delay", 0)
         
@@ -249,7 +239,6 @@ class ModeService:
             success = await self._device_service.control_device(
                 user_id=user_id,
                 device_id=device_id,
-                action=action,
                 value=value
             )
             
@@ -260,7 +249,6 @@ class ModeService:
             
             results["action_results"].append({
                 "device_id": device_id,
-                "action": action,
                 "value": value,
                 "success": success,
                 "timestamp": datetime.now().isoformat()
@@ -270,7 +258,6 @@ class ModeService:
             results["failed_actions"] += 1
             results["action_results"].append({
                 "device_id": device_id,
-                "action": action,
                 "value": value,
                 "success": False,
                 "error": str(e),

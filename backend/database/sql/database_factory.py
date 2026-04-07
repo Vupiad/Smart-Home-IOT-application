@@ -18,14 +18,14 @@ class SQLFactory:
         Raises:
             ValueError: If DATABASE_TYPE is not supported
         """
-        db_type = os.getenv("DATABASE_TYPE", "postgres")
+        db_type = os.getenv("DATABASE_TYPE", "json")
         
         if db_type == "postgres":
             return PostgresManager(dsn=os.getenv("POSTGRES_URL"))
         
         elif db_type == "json":
             from ..json.json_database_manager import JsonDatabaseManager
-            data_file = os.getenv("DATA_FILE_PATH", "backend/data.json")
+            data_file = os.getenv("DATA_FILE_PATH", "data.json")
             return JsonDatabaseManager(file_path=data_file)
         
         raise ValueError(f"Unsupported database type: {db_type}. Supported: postgres, json")
