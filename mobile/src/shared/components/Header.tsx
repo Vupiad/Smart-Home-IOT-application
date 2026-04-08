@@ -13,6 +13,8 @@ type HeaderProps = {
   onBackPress?: () => void;
   onAvatarPress?: () => void;
   onAddPress?: () => void;
+  // 1. Thêm prop này để truyền nút Save từ màn hình Automation vào
+  rightElement?: React.ReactNode;
 };
 
 const DEFAULT_AVATAR =
@@ -23,10 +25,11 @@ export default function Header({
   temperature = "28°C",
   humidity = "70%",
   dateLabel = "Wed, May 24th",
-  avatarUri = DEFAULT_AVATAR, // from be later
+  avatarUri = DEFAULT_AVATAR,
   onBackPress,
   onAvatarPress,
   onAddPress,
+  rightElement, // 2. Nhận prop
 }: HeaderProps) {
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -87,7 +90,6 @@ export default function Header({
             <Text style={styles.illustrationText}>SMART HOME</Text>
           </View>
         </View>
-
         <View style={styles.titleRow}>
           <View style={styles.titleLeftWrap}>
             {onBackPress && (
@@ -97,13 +99,19 @@ export default function Header({
             )}
             <Text style={styles.tabName}>{tabName}</Text>
           </View>
-          {onAddPress && (
-            <Pressable onPress={onAddPress} style={styles.addButton}>
-              <Ionicons name="add" size={40} color="#fff" />
-            </Pressable>
-          )}
+
+          {/* 3. Render icon Add hoặc rightElement (nút Save) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {onAddPress && (
+              <Pressable onPress={onAddPress} style={styles.addButton}>
+                <Ionicons name="add" size={40} color="#fff" />
+              </Pressable>
+            )}
+            {rightElement && rightElement}
+          </View>
+
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
