@@ -16,7 +16,7 @@ type SleepClock = {
   period: "AM" | "PM";
 };
 
-const COLORS = ["#2D5BFF", "#FFFFFF", "#F6C126", "#E24C4C"];
+const COLORS = ["#c600c9", "#FFFFFF", "#F6C126", "#E24C4C"];
 
 function toSleepClockFromMinutes(timerMinutes: number): SleepClock {
   const target = new Date(Date.now() + Math.max(0, timerMinutes) * 60_000);
@@ -58,6 +58,17 @@ export default function LightControl({
   onChangeColor,
   onChangeTimer,
 }: LightControlProps) {
+  const brightnessRatio = Math.min(1, Math.max(0, detail.brightness / 100));
+  const lightOnFactor = detail.isOn ? 1 : 0;
+  const glowLayers = [
+    { size: 340, top: -24, factor: 0.12 },
+    { size: 300, top: -4, factor: 0.18 },
+    { size: 260, top: 16, factor: 0.24 },
+    { size: 220, top: 36, factor: 0.31 },
+    { size: 180, top: 56, factor: 0.39 },
+  ];
+  const lampOpacity = 0.35 + brightnessRatio * 0.65 * lightOnFactor;
+
   const [sleepClock, setSleepClock] = useState<SleepClock>(() =>
     toSleepClockFromMinutes(detail.timerMinutes),
   );
@@ -99,9 +110,29 @@ export default function LightControl({
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
+        {glowLayers.map((layer, index) => {
+          const opacity =
+            (0.02 + brightnessRatio * layer.factor) * lightOnFactor;
+          return (
+            <View
+              key={index}
+              style={[
+                styles.lightGlowLayer,
+                {
+                  width: layer.size,
+                  height: layer.size,
+                  borderRadius: layer.size / 2,
+                  top: layer.top,
+                  backgroundColor: detail.colorHex,
+                  opacity,
+                },
+              ]}
+            />
+          );
+        })}
         <Image
           source={lightImageSource}
-          style={styles.lightImage}
+          style={[styles.lightImage, { opacity: lampOpacity }]}
           resizeMode="contain"
         />
       </View>
@@ -122,7 +153,13 @@ export default function LightControl({
 
           <View style={styles.progressTrack}>
             <View
-              style={[styles.progressFill, { width: `${detail.brightness}%` }]}
+              style={[
+                styles.progressFill,
+                {
+                  width: `${detail.brightness}%`,
+                  backgroundColor: detail.colorHex,
+                },
+              ]}
             />
           </View>
 
@@ -251,6 +288,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#2D5BFF",
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lightGlowLayer: {
+    position: "absolute",
+    alignSelf: "center",
   },
   lightImage: {
     marginTop: 15,
