@@ -58,6 +58,7 @@ export default function LightControl({
   onChangeColor,
   onChangeTimer,
 }: LightControlProps) {
+  const [brightnessTrackWidth, setBrightnessTrackWidth] = useState(0);
   const brightnessRatio = Math.min(1, Math.max(0, detail.brightness / 100));
   const lightOnFactor = detail.isOn ? 1 : 0;
   const glowLayers = [
@@ -107,6 +108,14 @@ export default function LightControl({
     onChangeTimer(toTimerMinutes(newClock));
   };
 
+  const handleBrightnessDrag = (x: number) => {
+    if (brightnessTrackWidth <= 0) {
+      return;
+    }
+    const ratio = Math.min(1, Math.max(0, x / brightnessTrackWidth));
+    onChangeBrightness(Math.round(ratio * 100));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
@@ -151,7 +160,20 @@ export default function LightControl({
             <Text style={styles.stepText}>-</Text>
           </Pressable>
 
-          <View style={styles.progressTrack}>
+          <View
+            style={styles.progressTrack}
+            onLayout={(event) => {
+              setBrightnessTrackWidth(event.nativeEvent.layout.width);
+            }}
+            onStartShouldSetResponder={() => true}
+            onMoveShouldSetResponder={() => true}
+            onResponderGrant={(event) => {
+              handleBrightnessDrag(event.nativeEvent.locationX);
+            }}
+            onResponderMove={(event) => {
+              handleBrightnessDrag(event.nativeEvent.locationX);
+            }}
+          >
             <View
               style={[
                 styles.progressFill,

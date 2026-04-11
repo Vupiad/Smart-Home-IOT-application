@@ -60,6 +60,7 @@ export default function ACControl({
   onChangeFanSpeed,
   onChangeTimer,
 }: ACControlProps) {
+  const [tempTrackWidth, setTempTrackWidth] = useState(0);
   const [activeEditor, setActiveEditor] = useState<
     "humidity" | "sleep" | "fan" | null
   >(null);
@@ -187,6 +188,15 @@ export default function ACControl({
     1,
     Math.max(0, (detail.temperature - minTemp) / (maxTemp - minTemp)),
   );
+
+  const handleTempDrag = (x: number) => {
+    if (tempTrackWidth <= 0) {
+      return;
+    }
+    const ratio = Math.min(1, Math.max(0, x / tempTrackWidth));
+    const nextTemp = Math.round(minTemp + ratio * (maxTemp - minTemp));
+    onChangeTemperature(nextTemp);
+  };
 
   return (
     <View style={styles.container}>
@@ -419,7 +429,20 @@ export default function ACControl({
             <Text style={styles.tempText}>{detail.temperature}°C</Text>
           </View>
         </View>
-        <View style={styles.tempScaleWrap}>
+        <View
+          style={styles.tempScaleWrap}
+          onLayout={(event) => {
+            setTempTrackWidth(event.nativeEvent.layout.width);
+          }}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderGrant={(event) => {
+            handleTempDrag(event.nativeEvent.locationX);
+          }}
+          onResponderMove={(event) => {
+            handleTempDrag(event.nativeEvent.locationX);
+          }}
+        >
           <LinearGradient
             colors={["#2D5BFF", "#36C279", "#E55747"]}
             start={{ x: 0, y: 0.5 }}
