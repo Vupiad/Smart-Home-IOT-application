@@ -114,13 +114,13 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Pressable style={styles.backButton} onPress={navigation.goBack}>
-          <Ionicons name="chevron-back" size={24} color="#202736" />
+          <Ionicons name="chevron-back" size={24} color="#ffffff" />
         </Pressable>
 
         <Text style={styles.title}>{displayTitle}</Text>
 
         <Switch
-          trackColor={{ false: "#D6DBE3", true: "#2D5BFF" }}
+          trackColor={{ false: "#D6DBE3", true: "blue" }}
           thumbColor={detail.isOn ? "#FFFFFF" : "#F2F2F2"}
           ios_backgroundColor="#D6DBE3"
           value={detail.isOn}
@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: "#2D5BFF",
   },
   backButton: {
     width: 36,
@@ -246,41 +247,14 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     marginHorizontal: 12,
-    textAlign: "center",
-    fontSize: 30,
+    textAlign: "left",
+    fontSize: 25,
     lineHeight: 34,
-    color: "#2E3440",
+    color: "#ffffff",
     fontWeight: "700",
   },
   body: {
     paddingHorizontal: 18,
-    paddingTop: 20,
     paddingBottom: 32,
-  },
-  metaCard: {
-    marginTop: 12,
-    marginHorizontal: 18,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  metaIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: "#E8EEFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metaTextWrap: {
-    flex: 1,
-  },
-  metaSubtitle: {
-    color: "#616A78",
-    fontSize: 13,
   },
 });

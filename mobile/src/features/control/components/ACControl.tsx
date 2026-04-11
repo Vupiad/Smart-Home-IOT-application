@@ -352,15 +352,15 @@ export default function ACControl({
             ) : (
               <>
                 <Text style={styles.editorTitle}>Fan Speed</Text>
-                <View style={styles.fanSpeedRow}>
+                <View style={styles.modeChipRow}>
                   {[1, 2, 3].map((speed) => {
                     const isSpeedActive = draftFanSpeed === speed;
                     return (
                       <Pressable
                         key={speed}
                         style={[
-                          styles.speedButton,
-                          isSpeedActive && styles.speedButtonActive,
+                          styles.modeChip,
+                          isSpeedActive && styles.modeChipActive,
                         ]}
                         onPress={() => {
                           setDraftFanSpeed(speed as 1 | 2 | 3);
@@ -368,8 +368,8 @@ export default function ACControl({
                       >
                         <Text
                           style={[
-                            styles.speedText,
-                            isSpeedActive && styles.speedTextActive,
+                            styles.modeChipText,
+                            isSpeedActive && styles.modeChipTextActive,
                           ]}
                         >
                           {speed}
@@ -701,31 +701,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
-  },
-  fanSpeedRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    gap: 8,
-  },
-  speedButton: {
-    flex: 1,
-    borderRadius: 12,
-    backgroundColor: "#E3E7EF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    gap: 6,
-  },
-  speedButtonActive: {
-    backgroundColor: "#2D5BFF",
-  },
-  speedText: {
-    fontSize: 20,
-    color: "#49505E",
-    fontWeight: "700",
-  },
-  speedTextActive: {
-    color: "#FFFFFF",
   },
 });
