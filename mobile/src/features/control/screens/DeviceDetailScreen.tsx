@@ -22,12 +22,11 @@ import {
   setACFanSpeed,
   setACMode,
   setACTemperature,
-  //setACTimer,
+  setACTimer,
   setFanLevel,
   setFanTimer,
   setLightBrightness,
   setLightColor,
-  //setLightSchedule,
   toggleDevicePower,
 } from "../services/device.service";
 import {
@@ -110,15 +109,6 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
   }
 
   const displayTitle = catalogDevice?.name ?? title;
-  const displayRoom = catalogDevice?.room ?? "Unknown room";
-  const displaySubtitle = catalogDevice?.subtitle ?? null;
-  const displayIcon =
-    catalogDevice?.icon ??
-    (detail.type === "fan"
-      ? "aperture-outline"
-      : detail.type === "ac"
-        ? "snow-outline"
-        : "bulb-outline");
 
   return (
     <View style={styles.container}>
@@ -137,18 +127,6 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
           onValueChange={onTogglePower}
           disabled={saving}
         />
-      </View>
-
-      <View style={styles.metaCard}>
-        <View style={styles.metaIconWrap}>
-          <Ionicons name={displayIcon as any} size={24} color="#2D5BFF" />
-        </View>
-        <View style={styles.metaTextWrap}>
-          <Text style={styles.metaRoom}>Room: {displayRoom}</Text>
-          {displaySubtitle ? (
-            <Text style={styles.metaSubtitle}>{displaySubtitle}</Text>
-          ) : null}
-        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -196,16 +174,16 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 await setACFanSpeed(detail.id, fanSpeed);
               }, nextState);
             }}
-            // onChangeTimer={(timerMinutes) => {
-            //   const safeTimer = Math.max(0, timerMinutes);
-            //   const nextState: ACDeviceDetail = {
-            //     ...detail,
-            //     timerMinutes: safeTimer,
-            //   };
-            //   void runUpdate(async () => {
-            //     await setACTimer(detail.id, safeTimer);
-            //   }, nextState);
-            // }}
+            onChangeTimer={(timerMinutes) => {
+              const safeTimer = Math.max(0, timerMinutes);
+              const nextState: ACDeviceDetail = {
+                ...detail,
+                timerMinutes: safeTimer,
+              };
+              void runUpdate(async () => {
+                await setACTimer(detail.id, safeTimer);
+              }, nextState);
+            }}
           />
         )}
 
@@ -229,17 +207,6 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 await setLightColor(detail.id, colorHex);
               }, nextState);
             }}
-            // onApplySchedule={(scheduleFrom, scheduleTo) => {
-            //   const nextState: LightDeviceDetail = {
-            //     ...detail,
-            //     scheduleFrom,
-            //     scheduleTo,
-            //   };
-
-            //   void runUpdate(async () => {
-            //     await setLightSchedule(detail.id, { scheduleFrom, scheduleTo });
-            //   }, nextState);
-            // }}
           />
         )}
       </ScrollView>
@@ -250,14 +217,14 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#DCE1E9",
+    backgroundColor: "#ffffff",
   },
   loadingWrap: {
     flex: 1,
     backgroundColor: "#DCE1E9",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
   },
   loadingText: {
     color: "#5D6777",
@@ -312,13 +279,7 @@ const styles = StyleSheet.create({
   metaTextWrap: {
     flex: 1,
   },
-  metaRoom: {
-    color: "#2B3445",
-    fontSize: 15,
-    fontWeight: "700",
-  },
   metaSubtitle: {
-    marginTop: 4,
     color: "#616A78",
     fontSize: 13,
   },
