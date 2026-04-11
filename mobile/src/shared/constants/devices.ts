@@ -59,7 +59,7 @@ export const DEVICE_CATALOG: DeviceCatalogItem[] = [
   {
     id: "device-light-kitchen",
     type: "light",
-    name: "Light",
+    name: "Light Bulb",
     icon: "bulb-outline",
     room: "Kitchen",
     isOn: true,
@@ -68,7 +68,7 @@ export const DEVICE_CATALOG: DeviceCatalogItem[] = [
   {
     id: "device-light-living-room",
     type: "light",
-    name: "Light",
+    name: "Pendant",
     icon: "bulb-outline",
     room: "Living room",
     isOn: true,
@@ -77,7 +77,7 @@ export const DEVICE_CATALOG: DeviceCatalogItem[] = [
   {
     id: "device-light-bedroom",
     type: "light",
-    name: "Light",
+    name: "Lamp",
     icon: "bulb-outline",
     room: "Bedroom",
     isOn: false,

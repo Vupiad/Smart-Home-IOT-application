@@ -1,5 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { LightDeviceDetail } from "../types";
 
@@ -7,45 +7,108 @@ type LightControlProps = {
   detail: LightDeviceDetail;
   onChangeBrightness: (brightness: number) => void;
   onChangeColor: (colorHex: string) => void;
-  //onApplySchedule: (scheduleFrom: string, scheduleTo: string) => void;
+  onChangeTimer: (nextTimerMinutes: number) => void;
+};
+
+type SleepClock = {
+  hour: number;
+  minute: number;
+  period: "AM" | "PM";
 };
 
 const COLORS = ["#2D5BFF", "#FFFFFF", "#F6C126", "#E24C4C"];
+
+function toSleepClockFromMinutes(timerMinutes: number): SleepClock {
+  const target = new Date(Date.now() + Math.max(0, timerMinutes) * 60_000);
+  const hour24 = target.getHours();
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour = hour24 % 12 || 12;
+
+  return {
+    hour,
+    minute: target.getMinutes(),
+    period,
+  };
+}
+
+function toTimerMinutes(clock: SleepClock): number {
+  const now = new Date();
+  const target = new Date(now);
+  let hour24 = clock.hour % 12;
+  if (clock.period === "PM") {
+    hour24 += 12;
+  }
+
+  target.setHours(hour24, clock.minute, 0, 0);
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+
+  return Math.max(0, Math.round((target.getTime() - now.getTime()) / 60_000));
+}
+
+function formatSleepClock(clock: SleepClock): string {
+  const minute = String(clock.minute).padStart(2, "0");
+  return `${clock.hour}:${minute} ${clock.period}`;
+}
 
 export default function LightControl({
   detail,
   onChangeBrightness,
   onChangeColor,
-  //onApplySchedule,
+  onChangeTimer,
 }: LightControlProps) {
+  const [sleepClock, setSleepClock] = useState<SleepClock>(() =>
+    toSleepClockFromMinutes(detail.timerMinutes),
+  );
+
+  useEffect(() => {
+    setSleepClock(toSleepClockFromMinutes(detail.timerMinutes));
+  }, [detail.timerMinutes]);
+
+  const lightImageSource = useMemo(() => {
+    if (detail.id.includes("kitchen")) {
+      return require("../../../../assets/lightbulb-kitchen.png");
+    }
+    if (detail.id.includes("living-room")) {
+      return require("../../../../assets/pendant-light-living-room.png");
+    }
+    return require("../../../../assets/lamp-bedroom.png");
+  }, [detail.id]);
+
+  const adjustSleepHour = (delta: number) => {
+    const rawHour = ((sleepClock.hour - 1 + delta + 12) % 12) + 1;
+    const newClock = { ...sleepClock, hour: rawHour };
+    setSleepClock(newClock);
+    onChangeTimer(toTimerMinutes(newClock));
+  };
+
+  const adjustSleepMinute = (delta: number) => {
+    const nextMinute = (sleepClock.minute + delta + 60) % 60;
+    const newClock = { ...sleepClock, minute: nextMinute };
+    setSleepClock(newClock);
+    onChangeTimer(toTimerMinutes(newClock));
+  };
+
+  const changeSleepPeriod = (period: "AM" | "PM") => {
+    const newClock = { ...sleepClock, period };
+    setSleepClock(newClock);
+    onChangeTimer(toTimerMinutes(newClock));
+  };
+
   return (
-    <View>
-      <View style={styles.lampWrap}>
-        <Ionicons name="bulb-outline" size={140} color={detail.colorHex} />
+    <View style={styles.container}>
+      <View style={styles.hero}>
+        <Image
+          source={lightImageSource}
+          style={styles.lightImage}
+          resizeMode="contain"
+        />
       </View>
 
-      <View style={styles.colorRow}>
-        {COLORS.map((color) => {
-          const active = detail.colorHex.toLowerCase() === color.toLowerCase();
-          return (
-            <Pressable
-              key={color}
-              style={[
-                styles.colorDot,
-                { backgroundColor: color },
-                active && styles.colorActive,
-              ]}
-              onPress={() => {
-                onChangeColor(color);
-              }}
-            />
-          );
-        })}
-      </View>
-
-      <View style={styles.brightnessCard}>
+      <View style={styles.gaugeCard}>
+        <Text style={styles.gaugeTitle}>Brightness</Text>
         <Text style={styles.brightnessValue}>{detail.brightness}%</Text>
-        <Text style={styles.brightnessLabel}>Brightness</Text>
 
         <View style={styles.brightnessControlRow}>
           <Pressable
@@ -72,70 +135,148 @@ export default function LightControl({
             <Text style={styles.stepText}>+</Text>
           </Pressable>
         </View>
+
+        <View style={styles.colorRow}>
+          {COLORS.map((color) => {
+            const active =
+              detail.colorHex.toLowerCase() === color.toLowerCase();
+            return (
+              <Pressable
+                key={color}
+                style={[
+                  styles.colorDot,
+                  { backgroundColor: color },
+                  color === "#FFFFFF" && styles.colorDotWhite,
+                  active && styles.colorActive,
+                ]}
+                onPress={() => {
+                  onChangeColor(color);
+                }}
+              />
+            );
+          })}
+        </View>
       </View>
 
-      {/* <View style={styles.scheduleCard}>
-        <Text style={styles.scheduleTitle}>Schedule</Text>
+      <View style={styles.gaugeCard}>
+        <Text style={styles.gaugeTitle}>Scheduler</Text>
+        <Text style={styles.sleepDisplayValue}>
+          {formatSleepClock(sleepClock)}
+        </Text>
 
-        <View style={styles.scheduleRow}>
-          <Text style={styles.scheduleText}>From: {detail.scheduleFrom}</Text>
-          <Text style={styles.scheduleText}>To: {detail.scheduleTo}</Text>
+        <View style={styles.sleepAdjustRow}>
+          <Text style={styles.adjustLabel}>Hour</Text>
+          <Pressable
+            style={styles.smallBtn}
+            onPress={() => {
+              adjustSleepHour(1);
+            }}
+          >
+            <Text style={styles.smallBtnText}>+</Text>
+          </Pressable>
+          <Text style={styles.adjustValue}>{sleepClock.hour}</Text>
+          <Pressable
+            style={styles.smallBtn}
+            onPress={() => {
+              adjustSleepHour(-1);
+            }}
+          >
+            <Text style={styles.smallBtnText}>-</Text>
+          </Pressable>
         </View>
 
-        <Pressable
-          style={styles.scheduleButton}
-          onPress={() => {
-            // onApplySchedule(detail.scheduleFrom, detail.scheduleTo);
-          }}
-        >
-          <Text style={styles.scheduleButtonText}>Set Schedule</Text>
-        </Pressable>
-      </View> */}
+        <View style={styles.sleepAdjustRow}>
+          <Text style={styles.adjustLabel}>Minute</Text>
+          <Pressable
+            style={styles.smallBtn}
+            onPress={() => {
+              adjustSleepMinute(5);
+            }}
+          >
+            <Text style={styles.smallBtnText}>+</Text>
+          </Pressable>
+          <Text style={styles.adjustValue}>
+            {String(sleepClock.minute).padStart(2, "0")}
+          </Text>
+          <Pressable
+            style={styles.smallBtn}
+            onPress={() => {
+              adjustSleepMinute(-5);
+            }}
+          >
+            <Text style={styles.smallBtnText}>-</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.periodToggleRow}>
+          {(["AM", "PM"] as const).map((period) => {
+            const isPeriodActive = sleepClock.period === period;
+            return (
+              <Pressable
+                key={period}
+                style={[
+                  styles.periodButton,
+                  isPeriodActive && styles.periodButtonActive,
+                ]}
+                onPress={() => {
+                  changeSleepPeriod(period);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.periodText,
+                    isPeriodActive && styles.periodTextActive,
+                  ]}
+                >
+                  {period}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  lampWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-    marginBottom: 14,
-  },
-  colorRow: {
-    flexDirection: "row",
-    justifyContent: "center",
+  container: {
     gap: 14,
+  },
+  hero: {
+    marginHorizontal: -18,
+    paddingTop: 16,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
+    backgroundColor: "#2D5BFF",
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+  },
+  lightImage: {
+    marginTop: 15,
+    marginBottom: 15,
+    alignSelf: "center",
+    height: 220,
+  },
+  gaugeCard: {
+    borderRadius: 24,
+    backgroundColor: "#F6F7FA",
+    paddingTop: 26,
+    paddingBottom: 26,
+    paddingHorizontal: 18,
+  },
+  gaugeTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2E3440",
     marginBottom: 16,
   },
-  colorDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: "#CCD3E1",
-  },
-  colorActive: {
-    borderColor: "#2D5BFF",
-    transform: [{ scale: 1.06 }],
-  },
-  brightnessCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-  },
   brightnessValue: {
-    fontSize: 48,
+    fontSize: 44,
     color: "#303744",
     fontWeight: "700",
     textAlign: "center",
-  },
-  brightnessLabel: {
-    textAlign: "center",
-    color: "#7A8293",
-    marginTop: 4,
-    marginBottom: 12,
-    fontSize: 16,
+    marginBottom: 14,
   },
   brightnessControlRow: {
     flexDirection: "row",
@@ -166,37 +307,88 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#2D5BFF",
   },
-  scheduleCard: {
-    marginTop: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-  },
-  scheduleTitle: {
-    color: "#3A4150",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  scheduleRow: {
+  colorRow: {
     flexDirection: "row",
+    justifyContent: "center",
+    gap: 14,
+    marginTop: 18,
+  },
+  colorDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "#CCD3E1",
+  },
+  colorDotWhite: {
+    borderColor: "#AAB4C8",
+  },
+  colorActive: {
+    borderColor: "#2D5BFF",
+    transform: [{ scale: 1.06 }],
+  },
+  sleepDisplayValue: {
+    marginBottom: 20,
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#2E3440",
+    textAlign: "center",
+  },
+  sleepAdjustRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    gap: 6,
   },
-  scheduleText: {
-    color: "#4E5665",
-    fontSize: 16,
+  adjustLabel: {
+    fontSize: 15,
+    color: "#657086",
+    minWidth: 52,
+    fontWeight: "600",
   },
-  scheduleButton: {
-    backgroundColor: "#3F4348",
-    borderRadius: 8,
+  adjustValue: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    color: "#2D3643",
+    fontWeight: "700",
+  },
+  smallBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    backgroundColor: "#DFE4EE",
   },
-  scheduleButtonText: {
-    color: "#FFFFFF",
+  smallBtnText: {
+    fontSize: 26,
+    lineHeight: 26,
+    color: "#384150",
+  },
+  periodToggleRow: {
+    marginTop: 20,
+    flexDirection: "row",
+    gap: 8,
+  },
+  periodButton: {
+    flex: 1,
+    borderRadius: 10,
+    backgroundColor: "#E2E6EE",
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  periodButtonActive: {
+    backgroundColor: "#2D5BFF",
+  },
+  periodText: {
+    color: "#505A6E",
+    fontSize: 15,
     fontWeight: "700",
-    fontSize: 16,
+  },
+  periodTextActive: {
+    color: "#FFFFFF",
   },
 });

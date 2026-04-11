@@ -39,8 +39,7 @@ export interface LightDeviceDetail extends BaseDeviceDetail {
   type: "light";
   brightness: number;
   colorHex: string;
-  scheduleFrom: string;
-  scheduleTo: string;
+  timerMinutes: number;
 }
 
 export type DeviceDetail = FanDeviceDetail | ACDeviceDetail | LightDeviceDetail;
@@ -64,8 +63,7 @@ export type ACDeviceUpdatePayload = {
 export type LightDeviceUpdatePayload = {
   brightness?: number;
   colorHex?: string;
-  scheduleFrom?: string;
-  scheduleTo?: string;
+  timerMinutes?: number;
 };
 
 export type DeviceUpdatePayload =

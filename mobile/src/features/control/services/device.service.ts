@@ -4,7 +4,6 @@ import {
   DeviceDetail,
   DeviceSummary,
   FanDeviceUpdatePayload,
-  LightDeviceDetail,
   LightDeviceUpdatePayload,
   ToggleDevicePowerPayload,
 } from "../types";
@@ -43,8 +42,16 @@ const mockDevices: DeviceSummary[] = [
     subtitle: "Warm White",
   },
   {
+    id: "device-light-living-room",
+    name: "Pendant",
+    type: "light",
+    isOn: true,
+    room: "Living room",
+    subtitle: "Soft White",
+  },
+  {
     id: "device-light-bedroom",
-    name: "Light",
+    name: "Lamp",
     type: "light",
     isOn: false,
     room: "Bedroom",
@@ -91,19 +98,27 @@ const mockDetails: Record<string, DeviceDetail> = {
     online: true,
     brightness: 47,
     colorHex: "#2D5BFF",
-    scheduleFrom: "18:00",
-    scheduleTo: "23:00",
+    timerMinutes: 90,
+  },
+  "device-light-living-room": {
+    id: "device-light-living-room",
+    name: "Pendant",
+    type: "light",
+    isOn: true,
+    online: true,
+    brightness: 62,
+    colorHex: "#FFFFFF",
+    timerMinutes: 120,
   },
   "device-light-bedroom": {
     id: "device-light-bedroom",
-    name: "Light",
+    name: "Lamp",
     type: "light",
     isOn: false,
     online: true,
     brightness: 20,
     colorHex: "#F6C126",
-    scheduleFrom: "19:00",
-    scheduleTo: "23:30",
+    timerMinutes: 45,
   },
 };
 
@@ -326,25 +341,20 @@ export async function setLightColor(
   } as Partial<Extract<DeviceDetail, { type: "light" }>>);
 }
 
-export async function setLightSchedule(
+export async function setLightTimer(
   deviceId: string,
-  schedule:
-    | Pick<LightDeviceDetail, "scheduleFrom" | "scheduleTo">
-    | LightDeviceUpdatePayload,
+  payload: LightDeviceUpdatePayload | number,
 ): Promise<void> {
   await wait(120);
   assertDeviceType(mockDetails[deviceId], "light");
 
-  const scheduleFrom =
-    "scheduleFrom" in schedule ? schedule.scheduleFrom : undefined;
-  const scheduleTo = "scheduleTo" in schedule ? schedule.scheduleTo : undefined;
-
-  if (!scheduleFrom || !scheduleTo) {
-    throw new Error("Light scheduleFrom and scheduleTo are required");
+  const timerMinutes =
+    typeof payload === "number" ? payload : payload.timerMinutes;
+  if (timerMinutes === undefined) {
+    throw new Error("Light timerMinutes is required");
   }
 
   updateDetail(deviceId, {
-    scheduleFrom,
-    scheduleTo,
+    timerMinutes: Math.max(0, timerMinutes),
   } as Partial<Extract<DeviceDetail, { type: "light" }>>);
 }

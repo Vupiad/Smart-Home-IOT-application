@@ -27,6 +27,7 @@ import {
   setFanTimer,
   setLightBrightness,
   setLightColor,
+  setLightTimer,
   toggleDevicePower,
 } from "../services/device.service";
 import {
@@ -205,6 +206,16 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               const nextState: LightDeviceDetail = { ...detail, colorHex };
               void runUpdate(async () => {
                 await setLightColor(detail.id, colorHex);
+              }, nextState);
+            }}
+            onChangeTimer={(timerMinutes) => {
+              const safeTimer = Math.max(0, timerMinutes);
+              const nextState: LightDeviceDetail = {
+                ...detail,
+                timerMinutes: safeTimer,
+              };
+              void runUpdate(async () => {
+                await setLightTimer(detail.id, safeTimer);
               }, nextState);
             }}
           />
