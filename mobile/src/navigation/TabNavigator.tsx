@@ -7,6 +7,8 @@ import ControlScreen from "../features/control/screens/ControlScreen";
 import DeviceDetailScreen from "../features/control/screens/DeviceDetailScreen";
 import AutomationScreen from "../features/automation/screens/AutomationScreen";
 import ProfileScreen from "../features/profile/screens/ProfileScreen";
+import EditProfileScreen from "../features/profile/screens/EditProfileScreen";
+import ChangePasswordScreen from "../features/profile/screens/ChangePasswordScreen";
 import { DeviceType } from "../features/control/types";
 
 type HomeStackParamList = {
@@ -26,8 +28,10 @@ type AutomationStackParamList = {
   AutomationMain: undefined;
 };
 
-type OwnersStackParamList = {
+export type OwnersStackParamList = {
   OwnersMain: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
 };
 
 type TabParamList = {
@@ -75,6 +79,8 @@ function OwnersStackNavigator() {
   return (
     <OwnersStack.Navigator screenOptions={{ headerShown: false }}>
       <OwnersStack.Screen name="OwnersMain" component={ProfileScreen} />
+      <OwnersStack.Screen name="EditProfile" component={EditProfileScreen} />
+      <OwnersStack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </OwnersStack.Navigator>
   );
 }

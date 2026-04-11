@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-import { login, signUp } from "../services/auth.service";
-import { AuthUser, LoginPayload, SignUpPayload } from "../types";
+import { login, signUp, updateProfile, changePassword } from "../services/auth.service";
+import { AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -9,6 +9,8 @@ type AuthContextValue = {
   user: AuthUser | null;
   signIn: (payload: LoginPayload) => Promise<void>;
   signUpAndSignIn: (payload: SignUpPayload) => Promise<void>;
+  updateUser: (payload: UpdateProfilePayload) => Promise<void>;
+  updateUserPassword: (payload: ChangePasswordPayload) => Promise<void>;
   signOut: () => void;
 };
 
@@ -28,6 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session.user);
     };
 
+    const updateUser = async (payload: UpdateProfilePayload) => {
+      const updatedUser = await updateProfile(payload);
+      setUser(updatedUser);
+    };
+
+    const updateUserPassword = async (payload: ChangePasswordPayload) => {
+      await changePassword(payload);
+    };
+
     const signOut = () => {
       setUser(null);
     };
@@ -38,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       signIn,
       signUpAndSignIn,
+      updateUser,
+      updateUserPassword,
       signOut,
     };
   }, [user]);

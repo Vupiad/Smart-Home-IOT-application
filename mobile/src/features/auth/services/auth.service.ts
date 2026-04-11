@@ -1,4 +1,4 @@
-import { AuthSession, AuthUser, LoginPayload, SignUpPayload } from "../types";
+import { AuthSession, AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
 
 type AuthRecord = AuthUser & { password: string };
 
@@ -29,6 +29,8 @@ function sanitizeUser(record: AuthRecord): AuthUser {
     id: record.id,
     fullName: record.fullName,
     email: record.email,
+    phone: record.phone,
+    dateOfBirth: record.dateOfBirth,
   };
 }
 
@@ -64,8 +66,40 @@ export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
     email: payload.email.trim(),
     password: payload.password,
     fullName: payload.fullName.trim() || "New User",
+    phone: payload.phone?.trim() ?? "",
+    dateOfBirth: payload.dateOfBirth?.trim() ?? "",
   };
 
   mockUsers.push(record);
   return buildSession(sanitizeUser(record));
+}
+
+export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+  await wait(240);
+
+  const record = mockUsers.find((item) => item.id === payload.userId);
+  if (!record) {
+    throw new Error("User not found");
+  }
+
+  record.fullName = payload.fullName.trim();
+  if (payload.phone !== undefined) record.phone = payload.phone.trim();
+  if (payload.dateOfBirth !== undefined) record.dateOfBirth = payload.dateOfBirth.trim();
+  
+  return sanitizeUser(record);
+}
+
+export async function changePassword(payload: ChangePasswordPayload): Promise<void> {
+  await wait(240);
+
+  const record = mockUsers.find((item) => item.id === payload.userId);
+  if (!record) {
+    throw new Error("User not found");
+  }
+
+  if (record.password !== payload.currentPassword) {
+    throw new Error("Incorrect current password");
+  }
+
+  record.password = payload.newPassword;
 }

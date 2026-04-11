@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -26,7 +27,7 @@ export default function SignUpScreen({ navigation }: Props) {
     try {
       setSubmitting(true);
       const fullName = `${firstName} ${familyName}`.trim();
-      await signUpAndSignIn({ fullName: fullName || "New User", email, password });
+      await signUpAndSignIn({ fullName: fullName || "New User", email, password, phone, dateOfBirth: date });
     } catch (error) {
       Alert.alert("Sign up failed", (error as Error).message);
     } finally {
