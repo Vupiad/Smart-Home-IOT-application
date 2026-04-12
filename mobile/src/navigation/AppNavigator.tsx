@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from "react-native";
 import TabNavigator from "./TabNavigator";
 import AuthNavigator from "./AuthNavigator";
 import AddAutomationScreen from "../features/automation/screens/AddAutomationScreen";
+import AutomationDetailScreen from "../features/automation/screens/AutomationDetailScreen";
 import { useAuthContext } from "../features/auth/state/AuthContext";
 
 const Stack = createNativeStackNavigator();
@@ -23,7 +24,6 @@ export default function AppNavigator() {
 
 	return (
 		<NavigationContainer>
-			{ }
 			<Stack.Navigator screenOptions={{ headerShown: false }}>
 				{!isAuthenticated ? (
 					<Stack.Screen name="Auth" component={AuthNavigator} />
@@ -31,6 +31,16 @@ export default function AppNavigator() {
 					<>
 						<Stack.Screen name="MainTabs" component={TabNavigator} />
 
+						{/* MÀN HÌNH CHI TIẾT KỊCH BẢN */}
+						<Stack.Screen
+							name="AutomationDetail"
+							component={AutomationDetailScreen}
+							options={{
+								animation: 'slide_from_right',
+							}}
+						/>
+
+						{/* MÀN HÌNH THÊM/SỬA KỊCH BẢN */}
 						<Stack.Screen
 							name="AddAutomation"
 							component={AddAutomationScreen}
@@ -40,7 +50,6 @@ export default function AppNavigator() {
 						/>
 					</>
 				)}
-
 			</Stack.Navigator>
 		</NavigationContainer>
 	);

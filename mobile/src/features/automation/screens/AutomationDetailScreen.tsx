@@ -6,96 +6,138 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Switch,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-import Header from "../../../shared/components/Header";
-import DeviceCard from "../../../shared/components/DeviceCard";
 import { theme } from "../../../theme";
 import {
   AUTOMATION_AVAILABLE_SCENES,
   AutomationDeviceItem,
 } from "../../../shared/constants/automations";
-
-const INITIAL_DEVICES = AUTOMATION_AVAILABLE_SCENES["Get Up"];
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AutomationDetailScreen({ navigation, route }: any) {
-  const [devices, setDevices] = useState<AutomationDeviceItem[]>(INITIAL_DEVICES);
+  const { automation: passedAutomation, automationName: passedName } = route.params || {};
 
-  // Lấy tên kịch bản từ màn hình trước truyền sang
-  const automationName = route.params?.automationName || "Automation Detail";
+  const automationName = passedName || passedAutomation?.name || "Get Up";
 
-  // Hàm xử lý khi bật/tắt thiết bị trong danh sách
+  const [devices, setDevices] = useState<AutomationDeviceItem[]>(() => {
+    if (passedAutomation?.devices) return passedAutomation.devices;
+
+    const data = AUTOMATION_AVAILABLE_SCENES[automationName as keyof typeof AUTOMATION_AVAILABLE_SCENES];
+
+    return data || [];
+  });
+
+  const [isActive, setIsActive] = useState(passedAutomation?.isActive ?? true);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const handleRunNow = () => {
+    setIsRunning(true);
+    setTimeout(() => {
+      setIsRunning(false);
+      Alert.alert("Success", `Automation "${automationName}" activated!`);
+    }, 1500);
+  };
+
   const handleToggleDevice = (id: string) => {
     setDevices((prev) =>
       prev.map((device) =>
-        device.id === id
-          ? { ...device, isActive: !device.isActive }
-          : device,
-      ),
+        device.id === id ? { ...device, isActive: !device.isActive } : device
+      )
     );
   };
 
-  // Hàm xử lý khi nhấn Save
-  const handleSave = () => {
-    Alert.alert("Success", "Automation updated successfully!", [
-      { text: "OK", onPress: () => navigation.goBack() }
-    ]);
-  };
-
   return (
-    <View style={styles.container}>
-      <Header
-        tabName="Automation"
-        onBackPress={() => navigation.goBack()} // Nếu Header của bạn có hỗ trợ nút Back
-      />
+    <SafeAreaView style={styles.container}>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* INFO SECTION */}
-        <View style={styles.infoSection}>
-          <View>
-            <Text style={styles.detailTitle}>{automationName}</Text>
-            <Text style={styles.detailSubtitle}>
-              {devices.filter(d => d.isActive).length} devices active in this automation
-            </Text>
-          </View>
+        {/* DÒNG TIÊU ĐỀ TRANG */}
+        <View style={styles.headerTitleRow}>
           <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => Alert.alert("Delete", "Are you sure you want to delete this automation?")}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            <Ionicons name="trash-outline" size={22} color={theme.colors.dateIcon} />
+            <Ionicons name="chevron-back" size={20} color={theme.colors.textPrimary} />
           </TouchableOpacity>
+
+          <Text style={styles.pageTitle}>Detail Automation</Text>
+        </View>
+        {/* THẺ THÔNG TIN CHUNG */}
+        <View style={styles.mainInfoCard}>
+          <Text style={styles.label}>Automation Name</Text>
+          <Text style={styles.detailTitle}>{automationName}</Text>
+          <View style={styles.divider} />
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Enable Automation</Text>
+            <Switch
+              value={isActive}
+              onValueChange={setIsActive}
+              trackColor={{ false: "#D1D5DB", true: theme.colors.headerBlue }}
+            />
+          </View>
         </View>
 
-        {/* LIST HEADER */}
-        <View style={styles.listHeader}>
-          <Text style={styles.sectionLabel}>Devices & Actions</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("AddAutomation")}>
-            <Text style={styles.addMoreText}>+ Add more</Text>
+        {/* HÀNG NÚT BẤM (RUN - EDIT) */}
+        <View style={styles.actionRow}>
+          {/* <TouchableOpacity
+            style={[styles.runButton, isRunning && styles.runButtonDisabled]}
+            onPress={handleRunNow}
+            disabled={isRunning}
+          >
+            {isRunning ? <ActivityIndicator color="#FFF" /> : (
+              <>
+                <Ionicons name="play" size={20} color="#FFF" />
+                <Text style={styles.runButtonText}>Run Now</Text>
+              </>
+            )}
+          </TouchableOpacity> */}
+
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => {
+              const currentAutomationData = {
+                ...passedAutomation,
+                name: automationName,
+                devices: devices,
+                isActive: isActive,
+              };
+
+              navigation.navigate("AddAutomation", {
+                isEdit: true,
+                automation: currentAutomationData
+              });
+            }}
+          >
+            <Ionicons name="create-outline" size={20} color={theme.colors.headerBlue} />
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
-
-        {/* GRID THIẾT BỊ */}
-        <View style={styles.grid}>
-          {devices.map((device) => (
-            <View key={device.id} style={styles.gridItem}>
-              <DeviceCard
-                name={device.name}
-                subtitle={device.status}
-                isOn={device.isActive}
-                icon={device.icon}
-                onToggle={() => handleToggleDevice(device.id)}
-              />
+        {/* DANH SÁCH THIẾT BỊ DẠNG ROW */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Devices ({devices.length})</Text>
+        </View>
+        {devices.map((item) => (
+          <View key={item.id} style={styles.deviceRow}>
+            <View style={styles.deviceIconWrapper}>
+              <Ionicons name={item.icon as any} size={24} color={theme.colors.headerBlue} />
             </View>
-          ))}
-        </View>
 
-        {/* SAVE BUTTON */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
-        </TouchableOpacity>
+            <View style={styles.deviceInfo}>
+              <Text style={styles.deviceName}>{item.name}</Text>
+              <Text style={styles.deviceStatus}>{item.status}</Text>
+            </View>
+
+            <Switch
+              value={item.isActive}
+              onValueChange={() => handleToggleDevice(item.id)}
+              trackColor={{ false: "#D1D5DB", true: theme.colors.headerBlue }}
+            />
+          </View>
+        ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -109,69 +151,139 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
   },
-  infoSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
+  mainInfoCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  label: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
   },
   detailTitle: {
     ...theme.typography.title,
-    fontSize: 24,
+    fontSize: 28,
     color: theme.colors.textPrimary,
   },
-  detailSubtitle: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
+  divider: {
+    height: 1,
+    backgroundColor: "#F0F2F5",
+    marginVertical: 15,
   },
-  deleteButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
-    backgroundColor: "#FFEBE8",
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  runButton: {
+    flex: 2.5,
+    backgroundColor: theme.colors.headerBlue,
+    borderRadius: 16,
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  runButtonDisabled: { opacity: 0.7 },
+  runButtonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
+  editButton: {
+    flex: 1.5,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#E8ECF2",
+  },
+  backButton: {
+    position: 'absolute',
+    left: 3,
+    zIndex: 1,
+    alignItems: 'center'
+  },
+  editButtonText: { color: theme.colors.headerBlue, fontSize: 16, fontWeight: "600" },
+  deleteButtonAction: {
+    width: 56,
+    height: 56,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FFE5E5",
   },
-  listHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  sectionHeader: {
     marginBottom: 15,
   },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: "600",
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
   },
-  addMoreText: {
-    color: theme.colors.headerBlue,
-    fontWeight: "600",
+  deviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  deviceIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F0F4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  gridItem: {
-    width: "48%",
-    marginBottom: 15,
+  deviceInfo: {
+    flex: 1,
   },
-  saveButton: {
-    backgroundColor: theme.colors.headerBlue,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 30,
-    elevation: 4,
-    shadowColor: theme.colors.headerBlue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-  },
-  saveButtonText: {
-    color: "#FFF",
+  deviceName: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+  },
+  deviceStatus: {
+    fontSize: 13,
+    color: theme.colors.headerBlue,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+    marginTop: 10,
+    minHeight: 40,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: theme.colors.textPrimary,
   },
 });

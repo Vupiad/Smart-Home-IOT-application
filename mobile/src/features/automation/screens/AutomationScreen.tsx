@@ -19,6 +19,7 @@ import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 export default function AutomationScreen() {
   const { scenes, setSceneActive } = useSmartHomeContext();
   const navigation = useNavigation<any>();
+
   const handleAvatarPress = () => {
     navigation.getParent()?.navigate("OwnersTab");
   };
@@ -27,11 +28,11 @@ export default function AutomationScreen() {
     setSceneActive(id, newValue);
   };
 
-  // Logic: Nhấn vào Card để mở trang Chỉnh sửa
   const handleCardPress = (id: string) => {
-    navigation.navigate("AddAutomation", {
-      isEdit: true,
-      sceneId: id
+    const selectedScene = scenes.find((s) => s.id === id);
+    navigation.navigate("AutomationDetail", {
+      automation: selectedScene,
+      automationName: selectedScene?.name
     });
   };
 
@@ -49,7 +50,6 @@ export default function AutomationScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* AUTOMATION MODE */}
         <View style={styles.gridContainer}>
           {scenes.map((item) => (
             <SceneModeCard
@@ -64,7 +64,6 @@ export default function AutomationScreen() {
           ))}
         </View>
       </ScrollView>
-
     </View>
   );
 }
@@ -87,8 +86,6 @@ const styles = StyleSheet.create({
     marginTop: theme.layout.sectionGap,
     width: "100%",
   },
-
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -140,5 +137,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xl,
     borderRadius: theme.radius.round,
   },
-  makeAutoText: { color: theme.colors.white, fontSize: 16, fontWeight: "600" },
+  makeAutoText: {
+    color: theme.colors.white,
+    fontSize: 16,
+    fontWeight: "600"
+  },
 });

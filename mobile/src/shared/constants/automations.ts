@@ -11,7 +11,7 @@ export type AutomationScene = {
 export const AUTOMATION_SCENES: AutomationScene[] = [
   {
     id: "scene-get-up",
-    name: "Get up",
+    name: "Get Up",
     icon: "sunny",
     iconColor: theme.colors.weatherIcon,
     isActive: true,
@@ -64,6 +64,7 @@ export type AutomationDeviceItem = {
   status: string;
   isActive: boolean;
   icon: string;
+
 };
 
 export const AUTOMATION_OTHER_DEVICES: AutomationDeviceItem[] = [
