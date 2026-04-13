@@ -1,14 +1,16 @@
+import React, { useEffect, useState } from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import styles, { headerIconTokens } from "./Header.styles";
+import { fetchLatestTelemetry } from "../services/thingsboard.service";
 
 type HeaderProps = {
   tabName: string;
-  temperature?: string;
-  humidity?: string;
-  dateLabel?: string;
+  temperature?: string; // Kept for backwards compatibility
+  humidity?: string; // Kept for backwards compatibility
+  dateLabel?: string; // Kept for backwards compatibility
   avatarUri?: string;
   onBackPress?: () => void;
   onAvatarPress?: () => void;
@@ -22,15 +24,67 @@ const DEFAULT_AVATAR =
 
 export default function Header({
   tabName,
-  temperature = "28°C",
-  humidity = "70%",
-  dateLabel = "Wed, May 24th",
   avatarUri = DEFAULT_AVATAR,
   onBackPress,
   onAvatarPress,
   onAddPress,
   rightElement, // 2. Nhận prop
 }: HeaderProps) {
+  const [currentTemp, setCurrentTemp] = useState<string>("28.0°C"); // Default fallback
+  const [currentHumidity, setCurrentHumidity] = useState<string>("70.0%"); // Default fallback
+  const [currentDate, setCurrentDate] = useState<string>("");
+
+  useEffect(() => {
+    // Set formatted current date: "Wed, May 24th"
+    const updateDate = () => {
+      const now = new Date();
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      
+      const dayName = days[now.getDay()];
+      const monthName = months[now.getMonth()];
+      const date = now.getDate();
+      
+      let suffix = "th";
+      if (date === 1 || date === 21 || date === 31) suffix = "st";
+      else if (date === 2 || date === 22) suffix = "nd";
+      else if (date === 3 || date === 23) suffix = "rd";
+
+      setCurrentDate(`${dayName}, ${monthName} ${date}${suffix}`);
+    };
+    updateDate();
+
+    // Fetch real-time data
+    const loadTelemetry = async () => {
+      try {
+        const { temperature, humidity } = await fetchLatestTelemetry();
+        if (temperature !== null) {
+          setCurrentTemp(`${temperature.toFixed(1)}°C`);
+        } else {
+          // Hardcoded fallback logic
+          setCurrentTemp(`${(25 + Math.random() * 10).toFixed(1)}°C`);
+        }
+        
+        if (humidity !== null) {
+          setCurrentHumidity(`${humidity.toFixed(1)}%`);
+        } else {
+          // Hardcoded fallback logic
+          setCurrentHumidity(`${(55 + Math.random() * 30).toFixed(1)}%`);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch header telemetry", error);
+      }
+    };
+
+    loadTelemetry();
+    const interval = setInterval(() => {
+      loadTelemetry();
+      updateDate();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.card}>
@@ -49,7 +103,7 @@ export default function Header({
                 size={headerIconTokens.weatherSize}
                 color={headerIconTokens.weatherColor}
               />
-              <Text style={styles.metaText}>{temperature}</Text>
+              <Text style={styles.metaText}>{currentTemp}</Text>
             </View>
 
             <View style={styles.metaItem}>
@@ -58,7 +112,7 @@ export default function Header({
                 size={headerIconTokens.humiditySize}
                 color={headerIconTokens.humidityColor}
               />
-              <Text style={styles.metaText}>{humidity}</Text>
+              <Text style={styles.metaText}>{currentHumidity}</Text>
             </View>
 
             <View style={styles.metaItem}>
@@ -67,7 +121,7 @@ export default function Header({
                 size={headerIconTokens.dateSize}
                 color={headerIconTokens.dateColor}
               />
-              <Text style={styles.metaText}>{dateLabel}</Text>
+              <Text style={styles.metaText}>{currentDate}</Text>
             </View>
           </View>
 

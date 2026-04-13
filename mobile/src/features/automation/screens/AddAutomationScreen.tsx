@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../../theme";
 import { DEVICE_CATALOG, DeviceCatalogItem } from "../../../shared/constants/devices";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AUTOMATION_SCENES, AUTOMATION_AVAILABLE_SCENES, AutomationDeviceItem } from "../../../shared/constants/automations";
+import { AutomationDeviceItem } from "../../../shared/constants/automations";
 
 const parseFanLevel = (status: string): 1 | 2 | 3 => {
   const match = status.match(/Speed (\d)/);
@@ -128,12 +128,6 @@ export default function AddAutomationScreen() {
     }
 
     navigation.goBack();
-  };
-
-
-  const handleOpenDeviceConfig = (device: AutomationDeviceItem) => {
-    setSelectedDevice(device);
-    setTempStatus(device.status);
   };
 
   const handleSaveDeviceSettings = () => {

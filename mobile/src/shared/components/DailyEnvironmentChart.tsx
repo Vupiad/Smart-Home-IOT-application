@@ -1,6 +1,18 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { theme } from "../../theme";
+import {
+  fetchDailyTelemetry,
+  type FetchResult,
+} from "../services/thingsboard.service";
 
 const DEFAULT_MAX_TEMP_SCALE = 40;
 const DEFAULT_MAX_HUMIDITY_SCALE = 100;
@@ -30,35 +42,145 @@ type DailyEnvironmentChartProps = {
   footnoteText?: string;
   maxTempScale?: number;
   maxHumidityScale?: number;
+  /** Nếu true, tự động fetch dữ liệu từ ThingsBoard */
+  autoFetch?: boolean;
 };
 
 export default function DailyEnvironmentChart({
   title = "Daily Environment",
   showTitle = true,
-  data = DAILY_ENVIRONMENT_MOCK_DATA,
+  data: propData,
   showFootnote = false,
-  footnoteText = "Để tạm mock data, sau này thay bằng dữ liệu thực tế từ API (nếu kịp :D)",
+  footnoteText,
   maxTempScale = DEFAULT_MAX_TEMP_SCALE,
   maxHumidityScale = DEFAULT_MAX_HUMIDITY_SCALE,
+  autoFetch = true,
 }: DailyEnvironmentChartProps) {
+  const [chartData, setChartData] = useState<DailyEnvironmentData[]>(
+    propData ?? DAILY_ENVIRONMENT_MOCK_DATA,
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<"thingsboard" | "hardcoded">(
+    "hardcoded",
+  );
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(undefined);
+
+    try {
+      const result: FetchResult = await fetchDailyTelemetry(7);
+      setChartData(result.data);
+      setDataSource(result.source);
+      if (result.error) {
+        setErrorMessage(result.error);
+      }
+    } catch (error) {
+      console.warn("[Chart] Fetch error:", error);
+      setChartData(DAILY_ENVIRONMENT_MOCK_DATA);
+      setDataSource("hardcoded");
+      setErrorMessage("Lỗi kết nối");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Nếu có data truyền từ props thì dùng props, không fetch
+    if (propData) {
+      setChartData(propData);
+      return;
+    }
+
+    if (autoFetch) {
+      loadData();
+    }
+  }, [propData, autoFetch, loadData]);
+
+  const displayData = chartData;
+
   return (
     <View>
       {showTitle && <Text style={styles.sectionTitle}>{title}</Text>}
 
       <View style={styles.chartCard}>
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, styles.temperatureDot]} />
-            <Text style={styles.legendText}>Temperature (C)</Text>
+        {/* Header: Legend + Data Source Badge */}
+        <View style={styles.headerRow}>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, styles.temperatureDot]} />
+              <Text style={styles.legendText}>Temperature (°C)</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, styles.humidityDot]} />
+              <Text style={styles.legendText}>Humidity (%)</Text>
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, styles.humidityDot]} />
-            <Text style={styles.legendText}>Humidity (%)</Text>
+
+          {/* Refresh button */}
+          {autoFetch && !propData && (
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={loadData}
+              disabled={isLoading}
+              activeOpacity={0.6}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={16}
+                color={isLoading ? "#D1D5DB" : "#6B7280"}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Data Source Badge */}
+        <View style={styles.sourceBadgeRow}>
+          <View
+            style={[
+              styles.sourceBadge,
+              dataSource === "thingsboard"
+                ? styles.sourceBadgeLive
+                : styles.sourceBadgeOffline,
+            ]}
+          >
+            <View
+              style={[
+                styles.sourceDot,
+                dataSource === "thingsboard"
+                  ? styles.sourceDotLive
+                  : styles.sourceDotOffline,
+              ]}
+            />
+            <Text
+              style={[
+                styles.sourceBadgeText,
+                dataSource === "thingsboard"
+                  ? styles.sourceBadgeTextLive
+                  : styles.sourceBadgeTextOffline,
+              ]}
+            >
+              {dataSource === "thingsboard"
+                ? "Live – ThingsBoard"
+                : "Offline – Hardcoded"}
+            </Text>
           </View>
         </View>
 
+        {/* Loading State */}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="small" color="#2E4EE8" />
+            <Text style={styles.loadingText}>
+              Đang lấy dữ liệu từ ThingsBoard...
+            </Text>
+          </View>
+        )}
+
+        {/* Chart Bars */}
         <View style={styles.chartBarsWrap}>
-          {data.map((item) => {
+          {displayData.map((item) => {
             const temperatureHeight = Math.max(
               8,
               (item.temperature / maxTempScale) * BAR_HEIGHT,
@@ -70,6 +192,15 @@ export default function DailyEnvironmentChart({
 
             return (
               <View key={item.dateLabel} style={styles.dayColumn}>
+                {/* Value labels on top of bars */}
+                <View style={styles.valueLabels}>
+                  <Text style={[styles.valueText, styles.tempValueText]}>
+                    {Math.round(item.temperature)}°
+                  </Text>
+                  <Text style={[styles.valueText, styles.humidValueText]}>
+                    {Math.round(item.humidity)}%
+                  </Text>
+                </View>
                 <View style={styles.dayBars}>
                   <View
                     style={[
@@ -92,8 +223,16 @@ export default function DailyEnvironmentChart({
           })}
         </View>
 
+        {/* Footnote */}
         {showFootnote && (
-          <Text style={styles.chartFootnote}>{footnoteText}</Text>
+          <Text style={styles.chartFootnote}>
+            {footnoteText ??
+              (errorMessage
+                ? `⚠ ${errorMessage}`
+                : dataSource === "thingsboard"
+                  ? "✓ Dữ liệu thực từ ThingsBoard Cloud"
+                  : "Đang sử dụng dữ liệu mẫu (hardcoded)")}
+          </Text>
         )}
       </View>
     </View>
@@ -122,10 +261,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   legendRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    flex: 1,
   },
   legendItem: {
     flexDirection: "row",
@@ -148,6 +293,65 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontWeight: "500",
   },
+  refreshButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  sourceBadgeRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  sourceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  sourceBadgeLive: {
+    backgroundColor: "#ECFDF5",
+  },
+  sourceBadgeOffline: {
+    backgroundColor: "#FEF3C7",
+  },
+  sourceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  sourceDotLive: {
+    backgroundColor: "#10B981",
+  },
+  sourceDotOffline: {
+    backgroundColor: "#F59E0B",
+  },
+  sourceBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  sourceBadgeTextLive: {
+    color: "#059669",
+  },
+  sourceBadgeTextOffline: {
+    color: "#D97706",
+  },
+  loadingOverlay: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+  loadingText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginLeft: 8,
+  },
   chartBarsWrap: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -158,6 +362,21 @@ const styles = StyleSheet.create({
   dayColumn: {
     alignItems: "center",
     width: 34,
+  },
+  valueLabels: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  valueText: {
+    fontSize: 8,
+    fontWeight: "600",
+    marginHorizontal: 1,
+  },
+  tempValueText: {
+    color: "#FF8A65",
+  },
+  humidValueText: {
+    color: "#4FC3F7",
   },
   dayBars: {
     flexDirection: "row",

@@ -1,14 +1,7 @@
-import React, { useState } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
-  Text,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Header from "../../../shared/components/Header";

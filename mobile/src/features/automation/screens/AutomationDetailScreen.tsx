@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Switch,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../../theme";
@@ -31,15 +29,6 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
   });
 
   const [isActive, setIsActive] = useState(passedAutomation?.isActive ?? true);
-  const [isRunning, setIsRunning] = useState(false);
-
-  const handleRunNow = () => {
-    setIsRunning(true);
-    setTimeout(() => {
-      setIsRunning(false);
-      Alert.alert("Success", `Automation "${automationName}" activated!`);
-    }, 1500);
-  };
 
   const handleToggleDevice = (id: string) => {
     setDevices((prev) =>
