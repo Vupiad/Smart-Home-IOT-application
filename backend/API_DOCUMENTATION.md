@@ -104,10 +104,14 @@ curl -X POST "http://localhost:8000/api/v1/devices/?user_id=1" \
     "name": "Living Room Light",
     "device_type": "light",
     "base_topic": "home/living_room/light",
-    "settings": {
-      "brightness": 100,
-      "color": "white"
-    }
+    "state": {
+      "status" : "on/off",
+      "color" : {
+        "r" : 255,
+        "g" : 255,
+        "b" : 255
+      }
+    },
   }'
 ```
 
@@ -119,7 +123,14 @@ curl -X POST "http://localhost:8000/api/v1/devices/?user_id=1" \
   "name": "Living Room Light",
   "device_type": "light",
   "base_topic": "home/living_room/light",
-  "settings": {"brightness": 100, "color": "white"},
+  "state": {
+      "status" : "on/off",
+      "color" : {
+        "r" : 255,
+        "g" : 255,
+        "b" : 255
+      }
+    },
   "last_online": "2026-04-05T10:35:00"
 }
 ```
@@ -142,16 +153,37 @@ curl -X GET "http://localhost:8000/api/v1/devices/?user_id=1"
     "name": "Living Room Light",
     "device_type": "light",
     "base_topic": "home/living_room/light",
-    "settings": {...},
+    "state": {
+      "status" : "on/off",
+      "color" : {
+        "r" : 255,
+        "g" : 255,
+        "b" : 255
+      }
+    },
     "last_online": "2026-04-05T10:35:00"
   },
   {
     "id": 2,
     "owner_id": 1,
-    "name": "Bedroom Door Sensor",
-    "device_type": "door",
+    "name": "fan",
+    "device_type": "fan",
     "base_topic": "home/bedroom/door",
-    "settings": {},
+    "state": {
+      "status" : "on/off",
+      "speed" : "50"
+    },
+    "last_online": "2026-04-05T10:36:00"
+  },
+  {
+    "id": 3,
+    "owner_id": 1,
+    "name": "door lock",
+    "device_type": "door lock",
+    "base_topic": "home/bedroom/door",
+    "state": {
+      "status" : "locked/unlocked",
+    },
     "last_online": "2026-04-05T10:36:00"
   }
 ]
@@ -178,10 +210,14 @@ curl -X PUT "http://localhost:8000/api/v1/devices/1?user_id=1" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Updated Light Name",
-    "settings": {
-      "brightness": 80,
-      "color": "warm"
-    }
+    "state": {
+      "status" : "on/off",
+      "color" : {
+        "r" : 255,
+        "g" : 255,
+        "b" : 255
+      }
+    },
   }'
 ```
 
@@ -210,6 +246,7 @@ curl -X DELETE "http://localhost:8000/api/v1/devices/1?user_id=1"
 
 Modes allow you to create automation scripts that control multiple devices.
 
+(NOTE: see the list of available commands for each device in the end of this document)
 ### 1. Create Mode(tested ok)
 
 **Endpoint:** `POST /api/v1/modes/?user_id=USER_ID`
@@ -223,13 +260,11 @@ curl -X POST "http://localhost:8000/api/v1/modes/?user_id=1" \
     "actions": [
       {
         "device_id": 1,
-        "action": "set_brightness",
-        "value": 0
+        "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
       },
       {
         "device_id": 3,
-        "action": "lock",
-        "value": true
+        "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
       }
     ],
     "is_active": false
@@ -243,8 +278,8 @@ curl -X POST "http://localhost:8000/api/v1/modes/?user_id=1" \
   "user_id": 1,
   "name": "Goodnight Mode",
   "actions": [
-    {"device_id": 1, "action": "set_brightness", "value": 0},
-    {"device_id": 3, "action": "lock", "value": true}
+    {"device_id": 1, "command": { "commandId": "c_led_on", "target": "led", "action": "on" }},
+    {"device_id": 3, "action": { "commandId": "c_led_on", "target": "led", "action": "on" }}
   ],
   "is_active": false,
   "created_at": "2026-04-05T10:40:00"
@@ -284,7 +319,7 @@ curl -X PUT "http://localhost:8000/api/v1/modes/1?user_id=1" \
   -d '{
     "name": "Updated Mode Name",
     "actions": [
-      {"device_id": 2, "action": "toggle", "value": true}
+      {"device_id": 2, "command": { "commandId": "c_led_on", "target": "led", "action": "on" }}
     ]
   }'
 ```
@@ -359,8 +394,7 @@ Control individual device actions in real-time via MQTT.
 curl -X POST "http://localhost:8000/api/v1/device-control/1/action?user_id=1" \
   -H "Content-Type: application/json" \
   -d '{
-    "action": "turn_on",
-    "value": 1
+    "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
   }'
 ```
 
@@ -374,4 +408,62 @@ curl -X POST "http://localhost:8000/api/v1/device-control/1/action?user_id=1" \
   "value": 75,
   "device_state": {"brightness": 75}
 }
+```
+#### Commands
+
+### 3.2 LED Commands
+
+- Turn on:
+
+```json
+{ "commandId": "c_led_on", "target": "led", "action": "on" }
+```
+
+- Turn off:
+
+```json
+{ "commandId": "c_led_off", "target": "led", "action": "off" }
+```
+
+- Auto mode:
+
+```json
+{ "commandId": "c_led_auto", "target": "led", "action": "auto" }
+```
+
+- Set manual color by RGB:
+
+```json
+{ "commandId": "c_led_rgb", "target": "led", "action": "set", "r": 255, "g": 80, "b": 20 }
+```
+
+
+### 3.3 Fan Commands
+
+- Turn on (100%):
+
+```json
+{ "commandId": "c_fan_on", "target": "fan", "action": "on" }
+```
+
+- Turn off (0%):
+
+```json
+{ "commandId": "c_fan_off", "target": "fan", "action": "off" }
+```
+
+- Set speed (0..100):
+
+```json
+{ "commandId": "c_fan_set", "target": "fan", "action": "set", "speed": 60 }
+```
+
+Alternative accepted key: `value`.
+
+### 3.4 Door Commands
+
+- Open door:
+
+```json
+{ "commandId": "c_door_open", "target": "door", "action": "open" }
 ```
