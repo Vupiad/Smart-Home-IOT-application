@@ -1,12 +1,21 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "../../../shared/components/Header";
+import DailyEnvironmentChart from "../../../shared/components/DailyEnvironmentChart";
 import { theme } from "../../../theme";
 import { useAuthContext } from "../../auth/state/AuthContext";
 
-const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80";
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80";
 
 type ProfileOptionProps = {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -16,7 +25,13 @@ type ProfileOptionProps = {
   isLast?: boolean;
 };
 
-function ProfileOption({ iconName, label, onPress, color = theme.colors.textPrimary, isLast }: ProfileOptionProps) {
+function ProfileOption({
+  iconName,
+  label,
+  onPress,
+  color = theme.colors.textPrimary,
+  isLast,
+}: ProfileOptionProps) {
   return (
     <TouchableOpacity
       style={[styles.optionRow, !isLast && styles.optionBorder]}
@@ -41,13 +56,18 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Header tabName="Profile" />
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* User Info Card */}
         <View style={styles.userCard}>
           <Image source={{ uri: DEFAULT_AVATAR }} style={styles.avatar} />
           <Text style={styles.userName}>{user?.fullName || "Demo User"}</Text>
-          <Text style={styles.userEmail}>{user?.email || "user@example.com"}</Text>
+          <Text style={styles.userEmail}>
+            {user?.email || "user@example.com"}
+          </Text>
           {!!user?.phone && (
             <Text style={styles.userInfoText}>Phone: {user.phone}</Text>
           )}
@@ -98,10 +118,24 @@ export default function ProfileScreen() {
         </View> */}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={signOut} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" style={styles.logoutIcon} />
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={signOut}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={20}
+            color="#EF4444"
+            style={styles.logoutIcon}
+          />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
+
+        {/* Daily Temperature & Humidity  */}
+        <View style={styles.section}>
+          <DailyEnvironmentChart showFootnote />
+        </View>
       </ScrollView>
     </View>
   );
