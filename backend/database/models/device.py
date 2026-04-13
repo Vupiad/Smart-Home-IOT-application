@@ -15,4 +15,4 @@ class Device(BaseModel):
     state: Dict[str, Any] = {}      # Current device state (e.g., {"power": true, "brightness": 75})
     is_online: bool = False          # Whether device is currently online
     last_seen: Optional[datetime] = None  # Last time device communicated
-    supported_actions: List[str] = []   # Actions supported by this device type
+    

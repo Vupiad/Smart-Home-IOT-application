@@ -14,26 +14,45 @@
       "owner_id": 1,
       "name": "Living Room light",
       "device_type": "light",
-      "base_topic": "yolohome/V10",
-      "settings": {},
+      "base_topic": "yolohome/device/yolo_uno_01/cmd",
       "last_online": "2026-04-07T16:36:22.109876",
-      "state": {},
+      "state": {
+        "status" : "off",
+        "color" : {
+          "r" : 255,
+          "g" : 255,
+          "b" : 255
+        }
+      },
       "is_online": false,
-      "last_seen": null,
-      "supported_actions": []
+      "last_seen": null
     },
     {
       "id": 2,
       "owner_id": 1,
       "name": "Living Room fan",
-      "device_type": "light",
-      "base_topic": "yolohome/V12",
-      "settings": {},
+      "device_type": "fan",
+      "base_topic": "yolohome/device/yolo_uno_01/cmd",
       "last_online": "2026-04-07T16:37:49.662220",
-      "state": {},
+      "state": {
+        "status" : "off",
+        "speed" : 0
+      },
       "is_online": false,
-      "last_seen": null,
-      "supported_actions": []
+      "last_seen": null
+    },
+    {
+      "id": 3,
+      "owner_id": 1,
+      "name": "Living Room door lock",
+      "device_type": "door lock",
+      "base_topic": "yolohome/device/yolo_uno_01/cmd",
+      "last_online": "2026-04-07T16:37:49.662220",
+      "state": {
+        "status" : "locked"
+      },
+      "is_online": false,
+      "last_seen": null
     }
   ],
   "modes": [
@@ -44,13 +63,11 @@
       "actions": [
         {
           "device_id": 1,
-          "action": "set_brightness",
-          "value": 70
+          "command": { "commandId": "c_led_on", "target": "led", "action": "on" }
         },
         {
           "device_id": 2,
-          "action": "turn on",
-          "value": 50
+          "command": { "commandId": "c_fan_set", "target": "fan", "action": "set", "speed": 60 }
         }
       ],
       "is_active": false,

@@ -15,8 +15,7 @@ router = APIRouter(prefix="/api/v1/device-control", tags=["device-control"])
 # Response Models
 class ActionRequest(BaseModel):
     """Model for device action request."""
-    action: str = Field(..., description="Action name (e.g., 'turn_on', 'set_brightness')")
-    value: Optional[Any] = Field(None, description="Optional action parameter")
+    command: Optional[Any] = Field(None, description="Optional action parameter")
 
 
 class DeviceControlResponse(BaseModel):
@@ -24,8 +23,6 @@ class DeviceControlResponse(BaseModel):
     success: bool
     message: str
     device_id: int
-    action: str
-    value: Optional[Any] = None
     device_state: Dict[str, Any] = {}
 
 # Helper functions
@@ -65,7 +62,7 @@ async def execute_device_action(
         success = await device_service.control_device(
             user_id=user_id,
             device_id=device_id,
-            value=request.value
+            value=request.command
         )
         
         # Get updated device
@@ -75,10 +72,8 @@ async def execute_device_action(
         
         return DeviceControlResponse(
             success=success,
-            message=f"Action '{request.action}' executed successfully" if success else "Failed to execute action",
+            message=f"Action executed successfully" if success else "Failed to execute action",
             device_id=device_id,
-            action=request.action,
-            value=request.value,
             device_state=device.state
         )
     

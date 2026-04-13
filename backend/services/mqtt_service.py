@@ -73,7 +73,7 @@ class MqttService:
             self._is_connected = True
             print(f" [MQTT] Connected to broker at {self.config['host']}:{self.config['port']}")
             # Subscribe to sensor and feedback topics (ESP32 V-topics)
-            self.client.subscribe([("yolohome/V1", 0), ("yolohome/V2", 0), ("yolohome/V3", 0), ("yolohome/V13", 1)])
+            self.client.subscribe([("yolohome/V1", 0), ("yolohome/V2", 0), ("yolohome/V3", 0), ("yolohome/V13", 1), ("yolohome/device/yolo_uno_01/ack", 1)])
         else:
             print(f" [MQTT] Connection failed with code {rc}")
 
