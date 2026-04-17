@@ -4,17 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import WeatherBar from "../../../shared/components/WeatherBar";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Header from "../../../shared/components/Header";
 import SceneModeCard from "../../../shared/components/SceneModeCard";
 import DeviceCard from "../../../shared/components/DeviceCard";
+import DailyEnvironmentChart from "../../../shared/components/DailyEnvironmentChart";
 import { HOME_QUICK_ACCESS_IDS, HOME_SCENE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
+import { ControlStackParamList } from "../../../navigation/TabNavigator";
+import { DeviceType } from "../../control/types";
 import { theme } from "../../../theme";
 
 const HomeScreen: React.FC = () => {
@@ -24,153 +25,146 @@ const HomeScreen: React.FC = () => {
     setDevicePower,
     setSceneActive,
   } = useSmartHomeContext();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
   const quickAccessDevices = selectDevicesByIds(HOME_QUICK_ACCESS_IDS);
   const homeScenes = selectScenesByIds(HOME_SCENE_IDS);
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header with gradient */}
-        <LinearGradient colors={["#3B6DF8", "#2B5CE6"]} style={styles.header}>
-          <WeatherBar />
+  const handleOpenControl = () => {
+    navigation.getParent()?.navigate("ControlTab" as never);
+  };
 
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.greeting}>Hi, Hoang Trang</Text>
-              <Text style={styles.subtitle}>
-                Welcome to "Smart Living"! Take control as you begin your
-                seamless journey of home automation
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.avatarContainer}>
-              <Ionicons
-                name="person-circle"
-                size={44}
-                color="rgba(255,255,255,0.8)"
-              />
-            </TouchableOpacity>
+  const handleOpenDeviceDetail = (device: (typeof quickAccessDevices)[number]) => {
+    navigation.getParent()?.navigate("ControlTab" as never, {
+      screen: "DeviceDetail",
+      params: {
+        deviceId: device.id,
+        deviceType: device.type as DeviceType,
+        title: device.name,
+      },
+    } as never);
+  };
+
+  return (
+    <View style={styles.container}>
+      <Header tabName="Home" />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.bodyContent}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.greeting}>Hi, Hoang Trang</Text>
+            <Text style={styles.subtitle}>
+              Welcome to "Smart Living"! Take control as you begin your
+              seamless journey of home automation
+            </Text>
           </View>
 
-          {/* Notification bell */}
-          <TouchableOpacity style={styles.bellIcon}>
-            <Ionicons name="notifications" size={22} color="#FFD700" />
-            <View style={styles.bellBadge}>
-              <Text style={styles.bellBadgeText}>1</Text>
-            </View>
-          </TouchableOpacity>
-        </LinearGradient>
-
-        {/* Scene Modes */}
-        <View style={styles.sceneModes}>
-          {homeScenes.map((scene) => (
-            <SceneModeCard
-              key={scene.id}
-              name={scene.name}
-              icon={scene.icon}
-              iconColor={scene.iconColor}
-              isActive={scene.isActive}
-              onToggle={(value) => setSceneActive(scene.id, value)}
-            />
-          ))}
-        </View>
-
-        {/* Quick Access */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick access</Text>
-          <View style={styles.deviceGrid}>
-            {quickAccessDevices.map((device) => (
-              <DeviceCard
-                key={device.id}
-                name={device.name}
-                icon={device.icon}
-                isOn={device.isOn}
-                subtitle={device.subtitle ?? device.room}
-                onToggle={(value) => setDevicePower(device.id, value)}
+          {/* Scene Modes */}
+          <View style={styles.sceneModes}>
+            {homeScenes.map((scene) => (
+              <SceneModeCard
+                key={scene.id}
+                name={scene.name}
+                icon={scene.icon}
+                iconColor={scene.iconColor}
+                isActive={scene.isActive}
+                onToggle={(value) => setSceneActive(scene.id, value)}
               />
             ))}
           </View>
+
+          {/* Quick Access */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Quick access</Text>
+              <TouchableOpacity onPress={handleOpenControl}>
+                <Text style={styles.viewMoreText}>Xem them</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickAccessList}
+            >
+              {quickAccessDevices.map((device) => (
+                <DeviceCard
+                  key={device.id}
+                  name={device.name}
+                  icon={device.icon}
+                  isOn={device.isOn}
+                  subtitle={device.room}
+                  onToggle={(value) => setDevicePower(device.id, value)}
+                  onPress={() => handleOpenDeviceDetail(device)}
+                  cardStyle={styles.quickAccessCard}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.section}>
+            <DailyEnvironmentChart title="Bieu do nhiet do, do am" />
+          </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#3B6DF8",
-  },
   container: {
     flex: 1,
     backgroundColor: "#F5F7FA",
   },
-  header: {
+  bodyContent: {
     paddingHorizontal: theme.layout.pagePaddingX,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
-    borderBottomLeftRadius: theme.spacing.xl,
-    borderBottomRightRadius: theme.spacing.xl,
+    paddingTop: theme.layout.sectionGap,
+    paddingBottom: theme.layout.sectionGap,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: theme.spacing.md,
+  welcomeSection: {
+    marginBottom: theme.layout.sectionGap,
   },
   greeting: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#1A1A1A",
     marginBottom: theme.layout.titleSubtitleGap,
   },
   subtitle: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    color: "#6B7280",
     lineHeight: 18,
-    maxWidth: "90%",
-  },
-  avatarContainer: {
-    marginLeft: 8,
-  },
-  bellIcon: {
-    position: "absolute",
-    right: theme.layout.pagePaddingX,
-    top: 80,
-  },
-  bellBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#FF4444",
-    borderRadius: 8,
-    width: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bellBadgeText: {
-    color: "#FFF",
-    fontSize: 9,
-    fontWeight: "700",
   },
   sceneModes: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: theme.layout.pagePaddingX,
-    marginTop: -16,
     marginBottom: theme.layout.sectionGap,
     gap: theme.layout.cardGap,
   },
   section: {
-    paddingHorizontal: theme.layout.pagePaddingX,
     marginBottom: theme.layout.sectionGap,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.layout.contentGap,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: theme.layout.contentGap,
+  },
+  viewMoreText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2D5BFF",
+  },
+  quickAccessList: {
+    paddingRight: 4,
+  },
+  quickAccessCard: {
+    width: 170,
+    marginRight: 12,
   },
   deviceGrid: {
     flexDirection: "row",

@@ -5,16 +5,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import WeatherBar from "../../../shared/components/WeatherBar";
+import Header from "../../../shared/components/Header";
 import DeviceCard from "../../../shared/components/DeviceCard";
 import { CONTROL_DEVICE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
@@ -22,17 +19,26 @@ import { ControlStackParamList } from "../../../navigation/TabNavigator";
 import { DeviceType } from "../types";
 import { theme } from "../../../theme";
 
+type DeviceFilter = "all" | "fan" | "ac" | "light" | "door";
+
 const ControlScreen: React.FC = () => {
   const [searchText, setSearchText] = useState("");
+  const [activeFilter, setActiveFilter] = useState<DeviceFilter>("all");
   const { selectDevicesByIds, setDevicePower } = useSmartHomeContext();
   const navigation =
     useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
   const devices = selectDevicesByIds(CONTROL_DEVICE_IDS);
 
-  const filteredDevices = devices.filter((device) =>
-    device.name.toLowerCase().includes(searchText.trim().toLowerCase()),
-  );
+  const normalizedRoomSearch = searchText.trim().toLowerCase();
+
+  const filteredDevices = devices.filter((device) => {
+    const matchesType = activeFilter === "all" || device.type === activeFilter;
+    const matchesRoom =
+      normalizedRoomSearch.length === 0 ||
+      device.room.toLowerCase().includes(normalizedRoomSearch);
+    return matchesType && matchesRoom;
+  });
 
   const handleOpenDeviceDetail = (device: (typeof filteredDevices)[number]) => {
     if (device.type === "door") {
@@ -48,32 +54,13 @@ const ControlScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <LinearGradient colors={["#3B6DF8", "#2B5CE6"]} style={styles.header}>
-          <WeatherBar />
-
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Control</Text>
-            <TouchableOpacity>
-              <Ionicons
-                name="person-circle"
-                size={44}
-                color="rgba(255,255,255,0.8)"
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Notification bell */}
-          <TouchableOpacity style={styles.bellIcon}>
-            <Ionicons name="notifications" size={22} color="#FFD700" />
-            <View style={styles.bellBadge}>
-              <Text style={styles.bellBadgeText}>1</Text>
-            </View>
-          </TouchableOpacity>
-        </LinearGradient>
+    <View style={styles.container}>
+      <Header tabName="Control" />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Search */}
         <View style={styles.searchContainer}>
@@ -81,7 +68,7 @@ const ControlScreen: React.FC = () => {
             <Ionicons name="search" size={18} color="#999" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search..."
+              placeholder="Search by room (living room, kitchen...)"
               placeholderTextColor="#999"
               value={searchText}
               onChangeText={setSearchText}
@@ -89,20 +76,42 @@ const ControlScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Welcome text */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>
-            Welcome to "Smart Living"! Take control as you begin your seamless
-            journey of home automation
-          </Text>
-        </View>
-
-        {/* Add device button */}
-        <View style={styles.addDeviceRow}>
-          <TouchableOpacity style={styles.addDeviceBtn}>
-            <Ionicons name="add-circle-outline" size={20} color="#3B6DF8" />
-            <Text style={styles.addDeviceText}>Add device</Text>
-          </TouchableOpacity>
+        <View style={styles.filterSection}>
+          <Text style={styles.filterLabel}>Filter by device</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.filterRow}>
+              {[
+                { key: "all", label: "All" },
+                { key: "fan", label: "Fan" },
+                { key: "ac", label: "AC" },
+                { key: "light", label: "Light" },
+                { key: "door", label: "Door" },
+              ].map((option) => {
+                const key = option.key as DeviceFilter;
+                const isActive = activeFilter === key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.filterChip,
+                      isActive && styles.filterChipActive,
+                    ]}
+                    onPress={() => setActiveFilter(key)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        isActive && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
         </View>
 
         {/* Device List */}
@@ -120,63 +129,30 @@ const ControlScreen: React.FC = () => {
               />
             ))}
           </View>
+          {filteredDevices.length === 0 && (
+            <Text style={styles.emptyText}>No devices found for this filter.</Text>
+          )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#3B6DF8",
-  },
   container: {
     flex: 1,
     backgroundColor: "#F5F7FA",
   },
-  header: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: theme.layout.pagePaddingX,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xl,
-    borderBottomLeftRadius: theme.spacing.xl,
-    borderBottomRightRadius: theme.spacing.xl,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  bellIcon: {
-    position: "absolute",
-    right: theme.layout.pagePaddingX,
-    top: 60,
-  },
-  bellBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#FF4444",
-    borderRadius: 8,
-    width: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bellBadgeText: {
-    color: "#FFF",
-    fontSize: 9,
-    fontWeight: "700",
+    paddingTop: theme.layout.sectionGap,
+    paddingBottom: theme.layout.sectionGap,
   },
   searchContainer: {
-    paddingHorizontal: theme.layout.pagePaddingX,
-    marginTop: -14,
+    marginBottom: theme.layout.contentGap,
   },
   searchBar: {
     backgroundColor: "#FFFFFF",
@@ -197,48 +173,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
   },
-  welcomeSection: {
-    paddingHorizontal: theme.layout.pagePaddingX,
-    marginTop: theme.layout.sectionGap,
+  filterSection: {
+    marginBottom: theme.layout.sectionGap,
   },
-  welcomeText: {
-    fontSize: 12,
-    color: "#888",
-    lineHeight: 18,
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4B5563",
+    marginBottom: 10,
   },
-  addDeviceRow: {
-    paddingHorizontal: theme.layout.pagePaddingX,
-    marginTop: theme.layout.sectionGap,
-    alignItems: "flex-end",
-  },
-  addDeviceBtn: {
+  filterRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: 8,
   },
-  addDeviceText: {
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+  },
+  filterChipActive: {
+    borderColor: "#2D5BFF",
+    backgroundColor: "#EAF0FF",
+  },
+  filterChipText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#333",
+    color: "#6B7280",
+  },
+  filterChipTextActive: {
+    color: "#2D5BFF",
   },
   section: {
-    paddingHorizontal: theme.layout.pagePaddingX,
-    marginTop: theme.layout.sectionGap,
     marginBottom: theme.layout.sectionGap,
   },
   deviceGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  emptyText: {
+    marginTop: 8,
+    textAlign: "center",
+    color: "#9CA3AF",
+    fontSize: 13,
   },
 });
 

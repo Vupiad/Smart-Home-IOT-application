@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { sharedCardStyles, sharedCardTokens } from "../styles/deviceCards";
 
@@ -10,6 +18,7 @@ interface DeviceCardProps {
   subtitle?: string;
   onToggle?: (value: boolean) => void;
   onPress?: () => void;
+  cardStyle?: StyleProp<ViewStyle>;
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -19,6 +28,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   subtitle,
   onToggle,
   onPress,
+  cardStyle,
 }) => {
   const handleToggle = (value: boolean) => {
     onToggle?.(value);
@@ -26,7 +36,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={[sharedCardStyles.cardBase, styles.card]}
+      style={[sharedCardStyles.cardBase, styles.card, cardStyle]}
       activeOpacity={0.8}
       onPress={onPress}
       disabled={!onPress}
