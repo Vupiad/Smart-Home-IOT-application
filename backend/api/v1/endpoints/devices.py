@@ -17,7 +17,7 @@ class DeviceCreateRequest(BaseModel):
     name: str
     device_type: str  # 'fan', 'light', 'door', 'sensor', etc.
     base_topic: str   # MQTT topic
-    settings: Dict[str, Any] = {}
+    state: Dict[str, Any] = {}
 
 
 class DeviceUpdateRequest(BaseModel):
@@ -25,7 +25,7 @@ class DeviceUpdateRequest(BaseModel):
     name: Optional[str] = None
     device_type: Optional[str] = None
     base_topic: Optional[str] = None
-    settings: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
 
 
 class DeviceResponse(BaseModel):
@@ -35,7 +35,7 @@ class DeviceResponse(BaseModel):
     name: str
     device_type: str
     base_topic: str
-    settings: Dict[str, Any]
+    state: Dict[str, Any]
     last_online: Optional[str] = None
 
 
@@ -67,7 +67,7 @@ async def create_device(
         name=request.name,
         device_type=request.device_type,
         base_topic=request.base_topic,
-        settings=request.settings,
+        state=request.state,
         last_online=datetime.now()
     )
     
@@ -79,7 +79,7 @@ async def create_device(
         name=created_device.name,
         device_type=created_device.device_type,
         base_topic=created_device.base_topic,
-        settings=created_device.settings,
+        state=created_device.state,
         last_online=created_device.last_online.isoformat() if created_device.last_online else None
     )
 
@@ -104,7 +104,7 @@ async def list_devices(
             name=d.name,
             device_type=d.device_type,
             base_topic=d.base_topic,
-            settings=d.settings,
+            state=d.state,
             last_online=d.last_online.isoformat() if d.last_online else None
         )
         for d in devices
@@ -146,7 +146,7 @@ async def get_device(
         name=device.name,
         device_type=device.device_type,
         base_topic=device.base_topic,
-        settings=device.settings,
+        state=device.state,
         last_online=device.last_online.isoformat() if device.last_online else None
     )
 
@@ -188,8 +188,8 @@ async def update_device(
         device.device_type = request.device_type
     if request.base_topic is not None:
         device.base_topic = request.base_topic
-    if request.settings is not None:
-        device.settings = request.settings
+    if request.state is not None:
+        device.state = request.state
     
     updated_device = await device_repo.update(device)
     
@@ -199,7 +199,7 @@ async def update_device(
         name=updated_device.name,
         device_type=updated_device.device_type,
         base_topic=updated_device.base_topic,
-        settings=updated_device.settings,
+        state=updated_device.state,
         last_online=updated_device.last_online.isoformat() if updated_device.last_online else None
     )
 

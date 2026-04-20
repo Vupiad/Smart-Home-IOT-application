@@ -13,33 +13,31 @@ from typing import Optional
 
 router = APIRouter()
 
+class UserResponse(BaseModel):
+    """User response model based on FE requirements."""
+    id: int
+    email: str
+    fullName: str
+    phone: Optional[str] = None
+    dateOfBirth: Optional[str] = None
 
-# Request/Response Models
 class LoginRequest(BaseModel):
-    """Login request with username and password."""
-    username: str
-    password: str
-
-
-class LoginResponse(BaseModel):
-    """Login response with user information."""
-    user: User
-
-
-class RegisterRequest(BaseModel):
-    """Registration request."""
-    username: str
+    """Login request."""
     email: EmailStr
     password: str
 
+class LoginResponse(BaseModel):
+    """Login response with token and user info."""
+    token: str
+    user: UserResponse
 
-class UserResponse(BaseModel):
-    """User response (without password hash)."""
-    id: int
-    username: str
-    email: str
-    created_at: Optional[str] = None
-
+class RegisterRequest(BaseModel):
+    """Registration request."""
+    email: EmailStr
+    password: str
+    fullName: str
+    phone: Optional[str] = None
+    dateOfBirth: Optional[str] = None
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
@@ -47,29 +45,34 @@ async def login(
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> LoginResponse:
     """
-    Login with username and password.
-    
-    Returns:
-        - user: User information
+    Login with email and password.
     """
-    print(f"[LOGIN] Attempting login for username: {request.username}")
-    # Find user by username
-    user = await user_repo.get_by_username(request.username)
+    user = await user_repo.get_by_email(request.email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid email or password"
         )
     
-    # Verify password
     if not verify_password(request.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid email or password"
         )
     
+    # Normally we would generate a real JWT token here.
+    # We will return a dummy token for now, or you can integrate standard JWT logic.
+    token = f"fake-jwt-token-for-{user.id}"
+    
     return LoginResponse(
-        user=user
+        token=token,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            fullName=user.fullName,
+            phone=user.phone,
+            dateOfBirth=user.dateOfBirth
+        )
     )
 
 
@@ -80,58 +83,32 @@ async def register(
 ) -> LoginResponse:
     """
     Register a new user account.
-    
-    Note: In single-user mode, only one user (admin) should be created via default initialization.
     """
-    print(f"[REGISTER] Attempting registration for username: {request.username}")
-    # Check if user already exists
-    existing = await user_repo.get_by_username(request.username)
+    existing = await user_repo.get_by_email(request.email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists"
+            detail="Email already registered"
         )
     
-    # Create new user
     user = User(
-        username=request.username,
         email=request.email,
-        hashed_password=hash_password(request.password)
+        hashed_password=hash_password(request.password),
+        fullName=request.fullName,
+        phone=request.phone,
+        dateOfBirth=request.dateOfBirth
     )
     
     created_user = await user_repo.create(user)
+    token = f"fake-jwt-token-for-{created_user.id}"
     
     return LoginResponse(
-        user=created_user
-    )
-
-
-@router.get("/me", response_model=UserResponse)
-async def get_current_user(
-    user_id: int = None,
-    user_repo: IUserRepository = Depends(get_user_repo)
-) -> UserResponse:
-    """
-    Get user info by ID.
-    
-    Note: Requires user_id as query parameter.
-    """
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing user_id parameter"
+        token=token,
+        user=UserResponse(
+            id=created_user.id,
+            email=created_user.email,
+            fullName=created_user.fullName,
+            phone=created_user.phone,
+            dateOfBirth=created_user.dateOfBirth
         )
-    
-    user = await user_repo.get_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        created_at=user.created_at.isoformat() if user.created_at else None
     )

@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from database.models.mode import Mode
-from api.deps import get_mode_repo, get_user_repo
+from database.models.mode import Mode, ModeDevice
+from api.deps import get_mode_repo, get_user_repo, get_mode_service
 from database.repository import IModeRepository, IUserRepository
+from services.mode_service import ModeService
 
 router = APIRouter()
 
@@ -15,15 +16,24 @@ router = APIRouter()
 class ModeCreateRequest(BaseModel):
     """Request to create a mode."""
     name: str
-    actions: List[Dict[str, Any]] = []  # [{"device_id": 1, "action": "on", "value": true}]
-    is_active: bool = False
+    startTime: str
+    endTime: str
+    devices: List[ModeDevice] = []
+    isActive: bool = False
 
 
 class ModeUpdateRequest(BaseModel):
     """Request to update a mode."""
     name: Optional[str] = None
-    actions: Optional[List[Dict[str, Any]]] = None
-    is_active: Optional[bool] = None
+    startTime: Optional[str] = None
+    endTime: Optional[str] = None
+    devices: Optional[List[ModeDevice]] = None
+    isActive: Optional[bool] = None
+
+
+class ModeToggleRequest(BaseModel):
+    """Request to toggle mode active state."""
+    isActive: bool
 
 
 class ModeResponse(BaseModel):
@@ -31,10 +41,11 @@ class ModeResponse(BaseModel):
     id: int
     user_id: int
     name: str
-    actions: List[Dict[str, Any]]
-    is_active: bool
+    startTime: str
+    endTime: str
+    devices: List[ModeDevice]
+    isActive: bool
     created_at: Optional[str] = None
-
 
 
 @router.post("/", response_model=ModeResponse)
@@ -46,19 +57,7 @@ async def create_mode(
 ) -> ModeResponse:
     """
     Create a new automation mode.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Body:
-        - name: Mode name
-        - actions: List of actions to perform
-        - is_active: Whether the mode is currently active
-    
-    Example action:
-        {"device_id": 1, "action": "toggle", "value": true}
     """
-    # Verify user exists
     user = await user_repo.get_by_id(user_id)
     if not user:
         raise HTTPException(
@@ -66,12 +65,13 @@ async def create_mode(
             detail="User not found"
         )
     
-    # Create mode
     mode = Mode(
         user_id=user_id,
         name=request.name,
-        actions=request.actions,
-        is_active=request.is_active,
+        startTime=request.startTime,
+        endTime=request.endTime,
+        devices=request.devices,
+        isActive=request.isActive,
         created_at=datetime.now()
     )
     
@@ -81,8 +81,10 @@ async def create_mode(
         id=created_mode.id,
         user_id=created_mode.user_id,
         name=created_mode.name,
-        actions=created_mode.actions,
-        is_active=created_mode.is_active,
+        startTime=created_mode.startTime,
+        endTime=created_mode.endTime,
+        devices=created_mode.devices,
+        isActive=created_mode.isActive,
         created_at=created_mode.created_at.isoformat() if created_mode.created_at else None
     )
 
@@ -94,9 +96,6 @@ async def list_modes(
 ) -> List[ModeResponse]:
     """
     List all automation modes created by the current user.
-    
-    Query Parameters:
-        - user_id: User ID
     """
     modes = await mode_repo.get_by_user(user_id)
     
@@ -105,8 +104,10 @@ async def list_modes(
             id=m.id,
             user_id=m.user_id,
             name=m.name,
-            actions=m.actions,
-            is_active=m.is_active,
+            startTime=m.startTime,
+            endTime=m.endTime,
+            devices=m.devices,
+            isActive=m.isActive,
             created_at=m.created_at.isoformat() if m.created_at else None
         )
         for m in modes
@@ -121,12 +122,6 @@ async def get_mode(
 ) -> ModeResponse:
     """
     Get a specific automation mode by ID.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - mode_id: Mode ID
     """
     mode = await mode_repo.get_by_id(mode_id)
     if not mode:
@@ -135,7 +130,6 @@ async def get_mode(
             detail="Mode not found"
         )
     
-    # Verify ownership
     if mode.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -146,8 +140,10 @@ async def get_mode(
         id=mode.id,
         user_id=mode.user_id,
         name=mode.name,
-        actions=mode.actions,
-        is_active=mode.is_active,
+        startTime=mode.startTime,
+        endTime=mode.endTime,
+        devices=mode.devices,
+        isActive=mode.isActive,
         created_at=mode.created_at.isoformat() if mode.created_at else None
     )
 
@@ -161,12 +157,6 @@ async def update_mode(
 ) -> ModeResponse:
     """
     Update an automation mode.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - mode_id: Mode ID
     """
     mode = await mode_repo.get_by_id(mode_id)
     if not mode:
@@ -175,20 +165,22 @@ async def update_mode(
             detail="Mode not found"
         )
     
-    # Verify ownership
     if mode.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this mode"
         )
     
-    # Update fields if provided
     if request.name is not None:
         mode.name = request.name
-    if request.actions is not None:
-        mode.actions = request.actions
-    if request.is_active is not None:
-        mode.is_active = request.is_active
+    if request.startTime is not None:
+        mode.startTime = request.startTime
+    if request.endTime is not None:
+        mode.endTime = request.endTime
+    if request.devices is not None:
+        mode.devices = request.devices
+    if request.isActive is not None:
+        mode.isActive = request.isActive
     
     updated_mode = await mode_repo.update(mode)
     
@@ -196,8 +188,10 @@ async def update_mode(
         id=updated_mode.id,
         user_id=updated_mode.user_id,
         name=updated_mode.name,
-        actions=updated_mode.actions,
-        is_active=updated_mode.is_active,
+        startTime=updated_mode.startTime,
+        endTime=updated_mode.endTime,
+        devices=updated_mode.devices,
+        isActive=updated_mode.isActive,
         created_at=updated_mode.created_at.isoformat() if updated_mode.created_at else None
     )
 
@@ -210,12 +204,6 @@ async def delete_mode(
 ) -> dict:
     """
     Delete an automation mode.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - mode_id: Mode ID
     """
     mode = await mode_repo.get_by_id(mode_id)
     if not mode:
@@ -224,7 +212,6 @@ async def delete_mode(
             detail="Mode not found"
         )
     
-    # Verify ownership
     if mode.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -241,20 +228,16 @@ async def delete_mode(
     return {"message": "Mode deleted successfully", "mode_id": mode_id}
 
 
-@router.post("/{mode_id}/activate")
-async def activate_mode(
+@router.patch("/{mode_id}/toggle")
+async def toggle_mode(
     mode_id: int,
+    request: ModeToggleRequest,
     user_id: int = Query(...),
-    mode_repo: IModeRepository = Depends(get_mode_repo)
+    mode_repo: IModeRepository = Depends(get_mode_repo),
+    mode_service: ModeService = Depends(get_mode_service)
 ) -> dict:
     """
-    Activate an automation mode.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - mode_id: Mode ID
+    Toggle mode active state and execute immediately if within timeframe.
     """
     mode = await mode_repo.get_by_id(mode_id)
     if not mode:
@@ -263,57 +246,38 @@ async def activate_mode(
             detail="Mode not found"
         )
     
-    # Verify ownership
     if mode.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to control this mode"
         )
     
-    mode.is_active = True
+    mode.isActive = request.isActive
     updated_mode = await mode_repo.update(mode)
     
-    return {
-        "message": "Mode activated",
-        "mode_id": updated_mode.id,
-        "is_active": updated_mode.is_active
-    }
-
-
-@router.post("/{mode_id}/deactivate")
-async def deactivate_mode(
-    mode_id: int,
-    user_id: int = Query(...),
-    mode_repo: IModeRepository = Depends(get_mode_repo)
-) -> dict:
-    """
-    Deactivate an automation mode.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - mode_id: Mode ID
-    """
-    mode = await mode_repo.get_by_id(mode_id)
-    if not mode:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Mode not found"
-        )
-    
-    # Verify ownership
-    if mode.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to control this mode"
-        )
-    
-    mode.is_active = False
-    updated_mode = await mode_repo.update(mode)
+    if updated_mode.isActive:
+        from datetime import datetime
+        import asyncio
+        now = datetime.now()
+        try:
+            start_time = datetime.strptime(updated_mode.startTime, "%H:%M").time()
+            end_time = datetime.strptime(updated_mode.endTime, "%H:%M").time()
+            curr_time = now.time()
+            
+            is_within = False
+            if start_time <= end_time:
+                is_within = start_time <= curr_time <= end_time
+            else:
+                is_within = start_time <= curr_time or curr_time <= end_time
+                
+            if is_within:
+                # Run mode in background
+                asyncio.create_task(mode_service.execute_mode(user_id, mode_id, parallel=True))
+        except ValueError:
+            pass
     
     return {
-        "message": "Mode deactivated",
+        "message": "Mode status updated and executed if within timeframe" if updated_mode.isActive else "Mode deactivated",
         "mode_id": updated_mode.id,
-        "is_active": updated_mode.is_active
+        "isActive": updated_mode.isActive
     }

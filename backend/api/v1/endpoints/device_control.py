@@ -13,9 +13,9 @@ router = APIRouter(prefix="/api/v1/device-control", tags=["device-control"])
 
 
 # Response Models
-class ActionRequest(BaseModel):
-    """Model for device action request."""
-    command: Optional[Any] = Field(None, description="Optional action parameter")
+class DeviceStateRequest(BaseModel):
+    """Model for device state request."""
+    state: Dict[str, Any] = Field(..., description="Target state of the device")
 
 
 class DeviceControlResponse(BaseModel):
@@ -32,28 +32,15 @@ async def get_device_service(device_repo: IDeviceRepository) -> DeviceService:
     return DeviceService(device_repo, mqtt_service)
 
 # Endpoints
-@router.post("/{device_id}/action", response_model=DeviceControlResponse)
-async def execute_device_action(
+@router.put("/{device_id}/state", response_model=DeviceControlResponse)
+async def update_device_state(
     device_id: int,
-    request: ActionRequest,
+    request: DeviceStateRequest,
     user_id: int = Query(...),
     device_repo: IDeviceRepository = Depends(get_device_repo),
 ) -> DeviceControlResponse:
     """
-    Execute an action on a device.
-    
-    Publishes action to MQTT and updates device state.
-    
-    Args:
-        device_id: Target device ID
-        request: ActionRequest with action name and optional value
-        user_id: User ID (query parameter)
-        
-    Returns:
-        DeviceControlResponse with execution result
-        
-    Raises:
-        HTTPException: If device not found or action invalid
+    Execute an action on a device by updating its state.
     """
     try:
         # Get services
@@ -62,7 +49,7 @@ async def execute_device_action(
         success = await device_service.control_device(
             user_id=user_id,
             device_id=device_id,
-            value=request.command
+            state=request.state
         )
         
         # Get updated device
@@ -72,12 +59,14 @@ async def execute_device_action(
         
         return DeviceControlResponse(
             success=success,
-            message=f"Action executed successfully" if success else "Failed to execute action",
+            message="Action executed successfully" if success else "Failed to execute action",
             device_id=device_id,
-            device_state=device.state
+            # We return the requested state immediately for UI optimism, 
+            # while the real state will be synced from MQTT ack later
+            device_state=request.state if success else device.state 
         )
     
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal error hihi: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

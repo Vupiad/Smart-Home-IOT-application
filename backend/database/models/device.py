@@ -8,7 +8,6 @@ class Device(BaseModel):
     name: str
     device_type: str # 'fan', 'light', 'door', 'sensor', etc.
     base_topic: str  # MQTT topic
-    settings: Dict[str, Any] = {} # This maps to JSONB
     last_online: Optional[datetime] = None
     
     # Device state management

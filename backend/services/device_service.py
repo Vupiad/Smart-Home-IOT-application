@@ -1,7 +1,8 @@
 """Device control service for MQTT-based device management."""
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 from datetime import datetime
+import uuid
 from database.models.device import Device
 from database.repository import IDeviceRepository
 from services.mqtt_service import MqttService
@@ -10,49 +11,62 @@ from services.mqtt_service import MqttService
 class DeviceService:
     """
     Business logic for device control operations.
-    
-    Handles:
-    - Device action validation
-    - MQTT command publishing
-    - Device state management
-    - Device connectivity tracking
     """
     
     def __init__(self, device_repo: IDeviceRepository, mqtt_service: MqttService):
-        """
-        Initialize device service.
-        
-        Args:
-            device_repo: Device repository for persistence
-            mqtt_service: MQTT service for publishing commands
-        """
         self._device_repo = device_repo
         self._mqtt_service = mqtt_service
+        
+    def build_mqtt_cmd(self, device_type: str, state: Dict[str, Any]) -> dict:
+        """
+        Convert UI state representation to Firmware command.
+        """
+        cmd_id = f"cmd_{uuid.uuid4().hex[:8]}"
+        
+        if device_type == "light":
+            if "color" in state and state.get("status") == "on":
+                return {
+                    "commandId": cmd_id,
+                    "target": "led",
+                    "action": "set",
+                    "r": state["color"].get("r", 255),
+                    "g": state["color"].get("g", 255),
+                    "b": state["color"].get("b", 255)
+                }
+            if state.get("status") == "on":
+                return {"commandId": cmd_id, "target": "led", "action": "on"}
+            else:
+                return {"commandId": cmd_id, "target": "led", "action": "off"}
+
+        elif device_type == "fan":
+            if "speed" in state and state.get("status") == "on":
+                return {
+                    "commandId": cmd_id,
+                    "target": "fan",
+                    "action": "set",
+                    "speed": state["speed"]
+                }
+            if state.get("status") == "on":
+                return {"commandId": cmd_id, "target": "fan", "action": "on"}
+            else:
+                return {"commandId": cmd_id, "target": "fan", "action": "off"}
+
+        elif device_type == "door":
+            if state.get("status") == "unlocked":
+                return {"commandId": cmd_id, "target": "door", "action": "open"}
+            else:
+                return {"commandId": cmd_id, "target": "door", "action": "close"}
+                
+        return {}
     
     async def control_device(
         self,
         user_id: int,
         device_id: int,
-        value: Optional[Any] = None
+        state: Dict[str, Any]
     ) -> bool:
         """
-        Control a device by publishing MQTT command.
-        
-        Validates:
-        - Device exists and is owned by user
-        - Action is supported by device type
-        - Value is within valid ranges
-        
-        Args:
-            user_id: Owner's user ID
-            device_id: Target device ID
-            value: Optional action parameter (brightness, temperature, etc.)
-            
-        Returns:
-            True if command published successfully, False otherwise
-            
-        Raises:
-            ValueError: If device not found, not owned by user, or action invalid
+        Control a device by mapping UI state to MQTT command.
         """
         # Retrieve device
         device = await self._device_repo.get_by_id(device_id)
@@ -63,12 +77,15 @@ class DeviceService:
         if device.owner_id != user_id:
             raise ValueError(f"Device {device_id} not owned by user {user_id}")
         
+        # Base topic needs /cmd appended according to spec
+        device_topic = f"{device.base_topic}/cmd" if not device.base_topic.endswith("/cmd") else device.base_topic
         
-        device_topic = device.base_topic
+        # Build MQTT command
+        mqtt_cmd = self.build_mqtt_cmd(device.device_type, state)
+        if not mqtt_cmd:
+            raise ValueError(f"Unsupported device type or state format: {device.device_type}")
         
-        # Execute the action
-        success = await self._mqtt_service.publish_to_topic(device_topic, value)
+        # Execute the action (sending as JSON dict)
+        success = await self._mqtt_service.publish_to_topic(device_topic, mqtt_cmd)
         
         return success
-    
-

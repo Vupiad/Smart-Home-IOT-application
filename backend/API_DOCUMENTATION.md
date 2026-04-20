@@ -1,469 +1,239 @@
-# Smart Home IoT API Documentation
+# Smart Home IoT API Documentation (Updated)
 
-## Overview
+This document outlines the REST APIs and WebSocket endpoints for the Smart Home IoT application.
 
-The Smart Home IoT API provides endpoints for user authentication, device management, and automation mode control. The backend supports both JSON file storage (single-user) and PostgreSQL databases.
-
----
-
-## Quick Start
-
-The default user is automatically created on application startup.
-
-### Database Selection
-
-Set `DATABASE_TYPE` in `.env`:
-- `json` — JSON file storage (no database required)
-- `postgresql` — PostgreSQL backend (requires running PostgreSQL)
-
-Currently configured: `DATABASE_TYPE=json`
+**Base URL**: `http://localhost:8000/api/v1`
 
 ---
 
-## Authentication Endpoints
+## 1. Authentication (`/auth`)
 
-All protected endpoints require a user ID passed as a query parameter: `?user_id=USER_ID`
+### 1.1 Login
+*   **POST** `/auth/login`
+*   **Body:**
+    ```json
+    {
+      "email": "demo@smarthome.app",
+      "password": "yourpassword"
+    }
+    ```
+*   **Response (200 OK):**
+    ```json
+    {
+      "token": "fake-jwt-token-for-1",
+      "user": {
+        "id": 1,
+        "email": "demo@smarthome.app",
+        "fullName": "Demo User",
+        "phone": "0123456789",
+        "dateOfBirth": "1990-01-01"
+      }
+    }
+    ```
 
-### 1. Login(tested)
-
-**Endpoint:** `POST /api/v1/auth/login`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "password": "admin123"
-  }'
-```
-
-**Response:**
-```json
-{
-  "user": {
-    "id": 1,
-    "username": "admin",
-    "email": "admin@smarthome.local",
-    "created_at": "2026-04-05T10:30:00"
-  }
-}
-```
-
-### 2. Register New User(tested)
-
-**Endpoint:** `POST /api/v1/auth/register`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "demouser",
-    "email": "user@example.com",
-    "password": "demopassword"
-  }'
-```
-
-**Response:** Same as login - returns newly created user info
-
-### 3. Get User Info(tested)
-
-**Endpoint:** `GET /api/v1/auth/me?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X GET "http://localhost:8000/api/v1/auth/me?user_id=1"
-```
-
-**Response:**
-```json
-{
-  "id": 1,
-  "username": "admin",
-  "email": "admin@smarthome.local",
-  "created_at": "2026-04-05T10:30:00"
-}
-```
+### 1.2 Register
+*   **POST** `/auth/register`
+*   **Body:**
+    ```json
+    {
+      "email": "newuser@smarthome.app",
+      "password": "securepassword",
+      "fullName": "New User",
+      "phone": "0987654321",
+      "dateOfBirth": "1995-12-31"
+    }
+    ```
+*   **Response (200 OK):** Trả về giống Login (Token + User object).
 
 ---
 
-## Device Management Endpoints
+## 2. User Profile (`/profile`)
 
-All device endpoints require authentication via user_id parameter: `?user_id=USER_ID`
+*Lưu ý: Truyền thêm query `?user_id=1` vào URL trong lúc chờ tích hợp JWT thực tế.*
 
-### 1. Create Device(tested)
+### 2.1 Update Profile
+*   **PUT** `/profile`
+*   **Body:**
+    ```json
+    {
+      "fullName": "Updated Name",
+      "phone": "0123456789",
+      "dateOfBirth": "1992-05-20"
+    }
+    ```
+*   **Response (200 OK):** Trả về User object sau khi cập nhật.
 
-**Endpoint:** `POST /api/v1/devices/?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/devices/?user_id=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Living Room Light",
-    "device_type": "light",
-    "base_topic": "home/living_room/light",
-    "state": {
-      "status" : "on/off",
-      "color" : {
-        "r" : 255,
-        "g" : 255,
-        "b" : 255
-      }
-    },
-  }'
-```
-
-**Response:**
-```json
-{
-  "id": 1,
-  "owner_id": 1,
-  "name": "Living Room Light",
-  "device_type": "light",
-  "base_topic": "home/living_room/light",
-  "state": {
-      "status" : "on/off",
-      "color" : {
-        "r" : 255,
-        "g" : 255,
-        "b" : 255
-      }
-    },
-  "last_online": "2026-04-05T10:35:00"
-}
-```
-
-### 2. List All Devices(tested ok)
-
-**Endpoint:** `GET /api/v1/devices/?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X GET "http://localhost:8000/api/v1/devices/?user_id=1"
-```
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "owner_id": 1,
-    "name": "Living Room Light",
-    "device_type": "light",
-    "base_topic": "home/living_room/light",
-    "state": {
-      "status" : "on/off",
-      "color" : {
-        "r" : 255,
-        "g" : 255,
-        "b" : 255
-      }
-    },
-    "last_online": "2026-04-05T10:35:00"
-  },
-  {
-    "id": 2,
-    "owner_id": 1,
-    "name": "fan",
-    "device_type": "fan",
-    "base_topic": "home/bedroom/door",
-    "state": {
-      "status" : "on/off",
-      "speed" : "50"
-    },
-    "last_online": "2026-04-05T10:36:00"
-  },
-  {
-    "id": 3,
-    "owner_id": 1,
-    "name": "door lock",
-    "device_type": "door lock",
-    "base_topic": "home/bedroom/door",
-    "state": {
-      "status" : "locked/unlocked",
-    },
-    "last_online": "2026-04-05T10:36:00"
-  }
-]
-```
-
-### 3. Get Specific Device(tested ok)
-
-**Endpoint:** `GET /api/v1/devices/{device_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X GET "http://localhost:8000/api/v1/devices/1?user_id=1"
-```
-
-**Response:** Single device object (see Create Device response)
-
-### 4. Update Device(tested ok)
-
-**Endpoint:** `PUT /api/v1/devices/{device_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X PUT "http://localhost:8000/api/v1/devices/1?user_id=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Updated Light Name",
-    "state": {
-      "status" : "on/off",
-      "color" : {
-        "r" : 255,
-        "g" : 255,
-        "b" : 255
-      }
-    },
-  }'
-```
-
-**Response:** Updated device object
-
-### 5. Delete Device(dangerous don't delete device, untest)
-
-**Endpoint:** `DELETE /api/v1/devices/{device_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X DELETE "http://localhost:8000/api/v1/devices/1?user_id=1"
-```
-
-**Response:**
-```json
-{
-  "message": "Device deleted successfully",
-  "device_id": 1
-}
-```
+### 2.2 Change Password
+*   **PUT** `/profile/password`
+*   **Body:**
+    ```json
+    {
+      "currentPassword": "oldpassword",
+      "newPassword": "newpassword"
+    }
+    ```
+*   **Response (200 OK):** `{"message": "Password changed successfully"}`
 
 ---
 
-## Automation Mode Endpoints
+## 3. Devices CRUD (`/devices`)
 
-Modes allow you to create automation scripts that control multiple devices.
+*Lưu ý: Yêu cầu truyền query `?user_id=1` cho toàn bộ các endpoint CRUD.*
 
-(NOTE: see the list of available commands for each device in the end of this document)
-### 1. Create Mode(tested ok)
+### 3.1 Create Device
+*   **POST** `/devices`
+*   **Body:**
+    ```json
+    {
+      "name": "Living Room Light",
+      "device_type": "light",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "state": {
+        "status": "off",
+        "color": { "r": 255, "g": 255, "b": 255 }
+      }
+    }
+    ```
 
-**Endpoint:** `POST /api/v1/modes/?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/modes/?user_id=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Goodnight Mode",
-    "actions": [
+### 3.2 List Devices
+*   **GET** `/devices`
+*   **Response (200 OK):**
+    ```json
+    [
       {
-        "device_id": 1,
-        "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
-      },
-      {
-        "device_id": 3,
-        "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
+        "id": 1,
+        "owner_id": 1,
+        "name": "Living Room Light",
+        "device_type": "light",
+        "base_topic": "yolohome/device/yolo_uno_01",
+        "state": { "status": "on", "color": {"r": 255, "g": 80, "b": 20} },
+        "last_online": "2026-04-20T10:35:00"
       }
-    ],
-    "is_active": false
-  }'
-```
-
-**Response:**
-```json
-{
-  "id": 1,
-  "user_id": 1,
-  "name": "Goodnight Mode",
-  "actions": [
-    {"device_id": 1, "command": { "commandId": "c_led_on", "target": "led", "action": "on" }},
-    {"device_id": 3, "action": { "commandId": "c_led_on", "target": "led", "action": "on" }}
-  ],
-  "is_active": false,
-  "created_at": "2026-04-05T10:40:00"
-}
-```
-
-### 2. List All Modes(tested ok)
-
-**Endpoint:** `GET /api/v1/modes/?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X GET "http://localhost:8000/api/v1/modes/?user_id=1"
-```
-
-**Response:** Array of mode objects
-
-### 3. Get Specific Mode(tested ok)
-
-**Endpoint:** `GET /api/v1/modes/{mode_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X GET "http://localhost:8000/api/v1/modes/1?user_id=1"
-```
-
-**Response:** Single mode object
-
-### 4. Update Mode(tested ok)
-
-**Endpoint:** `PUT /api/v1/modes/{mode_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X PUT "http://localhost:8000/api/v1/modes/1?user_id=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Updated Mode Name",
-    "actions": [
-      {"device_id": 2, "command": { "commandId": "c_led_on", "target": "led", "action": "on" }}
     ]
-  }'
-```
+    ```
 
-**Response:** Updated mode object
+### 3.3 Update Device
+*   **PUT** `/devices/{device_id}`
+*   **Body:** Cùng cấu trúc với Create, có thể gửi các trường muốn update.
 
-### 5. Delete Mode(tested ok)
-
-**Endpoint:** `DELETE /api/v1/modes/{mode_id}?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X DELETE "http://localhost:8000/api/v1/modes/1?user_id=1"
-```
-
-**Response:**
-```json
-{
-  "message": "Mode deleted successfully",
-  "mode_id": 1
-}
-```
-
-### 6. Activate Mode
-
-**Endpoint:** `POST /api/v1/modes/{mode_id}/activate?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/modes/1/activate?user_id=1"
-```
-
-**Response:**
-```json
-{
-  "message": "Mode activated",
-  "mode_id": 1,
-  "is_active": true
-}
-```
-
-### 7. Deactivate Mode
-
-**Endpoint:** `POST /api/v1/modes/{mode_id}/deactivate?user_id=USER_ID`
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/modes/1/deactivate?user_id=1"
-```
-
-**Response:**
-```json
-{
-  "message": "Mode deactivated",
-  "mode_id": 1,
-  "is_active": false
-}
-```
+### 3.4 Delete Device
+*   **DELETE** `/devices/{device_id}`
 
 ---
 
-## Device Control Endpoints
+## 4. Quick Device Control (`/device-control`)
 
-Control individual device actions in real-time via MQTT.
+### 4.1 Update Device State (Gửi lệnh MQTT)
+*   **PUT** `/device-control/{device_id}/state`
+*   **Query:** `?user_id=1`
+*   **Body:** Trạng thái mong muốn của thiết bị (UI format).
+    ```json
+    {
+      "state": {
+        "status": "on",
+        "speed": 50
+      }
+    }
+    ```
+*   **Response (200 OK):** Trả về state mới và lập tức publish lệnh xuống MQTT để thiết bị thay đổi.
 
-### 1. Execute Device Action(tested on light ok, value 1 for turn on, 0 for turn off)
+---
 
-**Endpoint:** `POST /api/v1/device-control/{device_id}/action?user_id=USER_ID`
+## 5. Automation Modes (`/modes`)
 
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/device-control/1/action?user_id=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": { "commandId": "c_led_on", "target": "led", "action": "on" },
-  }'
-```
+*Lưu ý: Yêu cầu truyền query `?user_id=1` cho toàn bộ các endpoint CRUD.*
 
-**Response:**
+### 5.1 Create Mode
+*   **POST** `/modes`
+*   **Body:** (Sử dụng 1 timeline chung `startTime`, `endTime` cho danh sách `devices` bên trong)
+    ```json
+    {
+      "name": "Good Morning",
+      "description": "Wake up sequence",
+      "startTime": "06:30",
+      "endTime": "08:00",
+      "isActive": true,
+      "devices": [
+        {
+          "id": 1,
+          "state": { "status": "on", "color": {"r": 255, "g": 255, "b": 255} }
+        },
+        {
+          "id": 2,
+          "state": { "status": "on", "speed": 30 }
+        }
+      ]
+    }
+    ```
+
+### 5.2 List & Get Modes
+*   **GET** `/modes` (Trả về array các modes)
+*   **GET** `/modes/{mode_id}` (Trả về chi tiết 1 mode)
+
+### 5.3 Toggle Mode (Bật/Tắt nhanh)
+*   **PATCH** `/modes/{mode_id}/toggle`
+*   **Body:**
+    ```json
+    {
+      "isActive": true
+    }
+    ```
+*   *Tính năng đặc biệt: Nếu toggle sang `true` và thời gian hiện tại nằm trong khung `startTime`-`endTime`, Mode sẽ được kích hoạt thực thi ngay lập tức.*
+
+---
+
+## 6. Telemetry & Sensors (`/sensors`)
+
+### 6.1 Get Current Telemetry
+*   **GET** `/sensors/current?device_id=yolo_uno_01` (device_id là optional)
+*   **Response (200 OK):**
+    ```json
+    {
+      "data": {
+        "topic": "yolohome/device/yolo_uno_01/telemetry",
+        "deviceId": "yolo_uno_01",
+        "temperature": 29.5,
+        "humidity": 66.3,
+        "light": 40,
+        "timestamp": "2026-04-20T18:14:00.123"
+      }
+    }
+    ```
+
+### 6.2 Get Telemetry History
+*   **GET** `/sensors/{topic}/history?limit=20`
+*   *(Ví dụ: `/sensors/yolohome/device/yolo_uno_01/telemetry/history`)*
+
+---
+
+## 7. WebSocket (Real-time Events)
+
+**Endpoint:** `ws://localhost:8000/ws`
+
+Sử dụng endpoint này trên Frontend để tự động cập nhật UI mà không cần F5 (Polling). Backend sẽ broadcast sự kiện dưới dạng chuỗi JSON mỗi khi có dữ liệu mới.
+
+### Sự kiện 1: Có dữ liệu Telemetry mới (Nhiệt độ, Độ ẩm)
 ```json
 {
-  "success": true,
-  "message": "Action 'set_brightness' executed successfully",
-  "device_id": 1,
-  "action": "set_brightness",
-  "value": 75,
-  "device_state": {"brightness": 75}
+  "type": "telemetry_update",
+  "deviceId": "yolo_uno_01",
+  "data": {
+    "temperature": 29.5,
+    "humidity": 66.3,
+    "light": 40,
+    "timestamp": "2026-04-20T18:14:00"
+  }
 }
 ```
-#### Commands
 
-### 3.2 LED Commands
-
-- Turn on:
-
+### Sự kiện 2: Thiết bị phản hồi trạng thái thực tế (Ack/State Update)
 ```json
-{ "commandId": "c_led_on", "target": "led", "action": "on" }
-```
-
-- Turn off:
-
-```json
-{ "commandId": "c_led_off", "target": "led", "action": "off" }
-```
-
-- Auto mode:
-
-```json
-{ "commandId": "c_led_auto", "target": "led", "action": "auto" }
-```
-
-- Set manual color by RGB:
-
-```json
-{ "commandId": "c_led_rgb", "target": "led", "action": "set", "r": 255, "g": 80, "b": 20 }
-```
-
-
-### 3.3 Fan Commands
-
-- Turn on (100%):
-
-```json
-{ "commandId": "c_fan_on", "target": "fan", "action": "on" }
-```
-
-- Turn off (0%):
-
-```json
-{ "commandId": "c_fan_off", "target": "fan", "action": "off" }
-```
-
-- Set speed (0..100):
-
-```json
-{ "commandId": "c_fan_set", "target": "fan", "action": "set", "speed": 60 }
-```
-
-Alternative accepted key: `value`.
-
-### 3.4 Door Commands
-
-- Open door:
-
-```json
-{ "commandId": "c_door_open", "target": "door", "action": "open" }
+{
+  "type": "device_update",
+  "device_id": 1,
+  "state": {
+    "status": "on",
+    "color": { "r": 255, "g": 255, "b": 255 }
+  }
+}
 ```

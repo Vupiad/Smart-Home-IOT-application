@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.v1.endpoints import sensors, auth, devices, modes, device_control
+from api.v1.endpoints import sensors, auth, devices, modes, device_control, profile
 
 from services.mqtt_service import MqttService
 
@@ -31,6 +31,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(devices.router, prefix="/api/v1/devices", tags=["Devices"])
 app.include_router(device_control.router, tags=["Device Control"])
 app.include_router(modes.router, prefix="/api/v1/modes", tags=["Automation Modes"])
@@ -84,7 +85,14 @@ async def startup_event():
         mqtt_service.start()
         print(f" [SUCCESS] MQTT Service connected")
         
-  
+        # Register sync handlers
+        from services.sync_service import SyncService
+        SyncService.register_sync_handlers(mqtt_service)
+        
+        # Start Scheduler
+        from services.scheduler_service import scheduler_service
+        scheduler_service.start()
+        
         print(" [STARTUP] All systems initialized")
         print("="*60 + "\n")
         
@@ -98,6 +106,13 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on application shutdown."""
     print("\n[SHUTDOWN] Closing connections...")
+    
+    try:
+        from services.scheduler_service import scheduler_service
+        scheduler_service.stop()
+    except Exception as e:
+        print(f"[SHUTDOWN] Error stopping scheduler: {e}")
+        
     mqtt_service = MqttService.get_instance()
     await mqtt_service.stop()
     print("[SHUTDOWN] MQTT Service stopped")

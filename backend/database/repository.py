@@ -17,8 +17,8 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_username(self, username: str) -> Optional[User]:
-        """Finds a user by their unique username."""
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Finds a user by their unique email."""
         pass
 
     @abstractmethod

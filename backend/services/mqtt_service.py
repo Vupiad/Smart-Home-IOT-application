@@ -72,8 +72,8 @@ class MqttService:
         if rc == 0:
             self._is_connected = True
             print(f" [MQTT] Connected to broker at {self.config['host']}:{self.config['port']}")
-            # Subscribe to sensor and feedback topics (ESP32 V-topics)
-            self.client.subscribe([("yolohome/V1", 0), ("yolohome/V2", 0), ("yolohome/V3", 0), ("yolohome/V13", 1), ("yolohome/device/yolo_uno_01/ack", 1)])
+            # Subscribe to sensor and feedback topics
+            self.client.subscribe([("yolohome/device/+/telemetry", 0), ("yolohome/device/+/ack", 1), ("yolohome/device/+/state", 1)])
         else:
             print(f" [MQTT] Connection failed with code {rc}")
 
@@ -88,7 +88,7 @@ class MqttService:
         print(f" [MQTT] Received {msg.topic}: {msg.payload.decode()}")
         
         # Store sensor data if repository is available
-        if self.repository and msg.topic in ["yolohome/V1", "yolohome/V2", "yolohome/V3"]:
+        if self.repository and mqtt.topic_matches_sub("+/device/+/telemetry", msg.topic):
             try:
                 payload = msg.payload.decode()
                 # Run async function in event loop if available
@@ -98,18 +98,18 @@ class MqttService:
                         self._event_loop
                     )
             except Exception as e:
-                print(f" [MQTT] Error saving sensor data: {e}")
+                print(f" [MQTT] Error saving telemetry data: {e}")
         
         # Call registered message handler if exists
-        # if msg.topic in self._message_handlers:
-        #     try:
-        #         handler = self._message_handlers[msg.topic]
-        #         if self._event_loop:
-        #             asyncio.run_coroutine_threadsafe(handler(msg), self._event_loop)
-        #         else:
-        #             asyncio.run(handler(msg))
-        #     except Exception as e:
-        #         print(f" [MQTT] Error in message handler for {msg.topic}: {e}")
+        for registered_topic, handler in self._message_handlers.items():
+            if mqtt.topic_matches_sub(registered_topic, msg.topic):
+                try:
+                    if self._event_loop:
+                        asyncio.run_coroutine_threadsafe(handler(msg), self._event_loop)
+                    else:
+                        asyncio.run(handler(msg))
+                except Exception as e:
+                    print(f" [MQTT] Error in message handler for {msg.topic}: {e}")
 
     def start(self):
         """Start the MQTT client connection loop."""
@@ -189,20 +189,20 @@ class MqttService:
             print(f" [MQTT] Error subscribing to {topic}: {e}")
             return False
 
-    # def register_message_handler(
-    #     self,
-    #     topic: str,
-    #     handler: Callable
-    # ) -> None:
-    #     """
-    #     Register a handler for messages received on a topic.
+    def register_message_handler(
+        self,
+        topic: str,
+        handler: Callable
+    ) -> None:
+        """
+        Register a handler for messages received on a topic.
         
-    #     Args:
-    #         topic: MQTT topic to register handler for
-    #         handler: Async function that receives mqtt.MQTTMessage
-    #     """
-    #     self._message_handlers[topic] = handler
-    #     print(f" [MQTT] Registered message handler for {topic}")
+        Args:
+            topic: MQTT topic to register handler for
+            handler: Async function that receives mqtt.MQTTMessage
+        """
+        self._message_handlers[topic] = handler
+        print(f" [MQTT] Registered message handler for {topic}")
 
     def is_connected(self) -> bool:
         """Check if MQTT client is connected."""
