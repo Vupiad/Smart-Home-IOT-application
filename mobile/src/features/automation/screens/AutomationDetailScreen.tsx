@@ -10,50 +10,61 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../../theme";
 import {
+  // Hardcode
   AUTOMATION_AVAILABLE_SCENES,
-  AutomationDeviceItem,
 } from "../../../shared/constants/automations";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export type AutomationDeviceState = {
+  status: string;
+  color?: { r: number; g: number; b: number };
+  speed?: string;
+  temp?: number;
+};
+
+export type AutomationDeviceItem = {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  state: AutomationDeviceState;
+  isActive?: boolean;
+};
 
 export default function AutomationDetailScreen({ navigation, route }: any) {
   const { automation: passedAutomation, automationName: passedName } = route.params || {};
 
   const automationName = passedName || passedAutomation?.name || "Get Up";
 
-  const [devices, setDevices] = useState<AutomationDeviceItem[]>(() => {
+  const [devices] = useState<AutomationDeviceItem[]>(() => {
     if (passedAutomation?.devices) return passedAutomation.devices;
 
+    // Hardcode
     const data = AUTOMATION_AVAILABLE_SCENES[automationName as keyof typeof AUTOMATION_AVAILABLE_SCENES];
 
-    return data || [];
+    return (data || []) as any[];
   });
 
   const [isActive, setIsActive] = useState(passedAutomation?.isActive ?? true);
 
-  const handleToggleDevice = (id: string) => {
-    setDevices((prev) =>
-      prev.map((device) =>
-        device.id === id ? { ...device, isActive: !device.isActive } : device
-      )
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* DÒNG TIÊU ĐỀ TRANG */}
         <View style={styles.headerTitleRow}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={styles.navBtn}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="chevron-back" size={20} color={theme.colors.textPrimary} />
+            <Ionicons name="chevron-back" size={28} color={theme.colors.textPrimary} />
           </TouchableOpacity>
 
-          <Text style={styles.pageTitle}>Detail Automation</Text>
+          <View style={styles.pageTitleContainer}>
+            <Text style={styles.pageTitle}>Detail Automation</Text>
+          </View>
+          
+          <View style={{ width: 68 }} />
         </View>
-        {/* THẺ THÔNG TIN CHUNG */}
+
         <View style={styles.mainInfoCard}>
           <Text style={styles.label}>Automation Name</Text>
           <Text style={styles.detailTitle}>{automationName}</Text>
@@ -63,26 +74,29 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
             <Switch
               value={isActive}
               onValueChange={setIsActive}
-              trackColor={{ false: "#D1D5DB", true: theme.colors.headerBlue }}
+              trackColor={{ false: theme.colors.grayMedium, true: theme.colors.headerBlue }}
             />
           </View>
         </View>
 
-        {/* HÀNG NÚT BẤM (RUN - EDIT) */}
-        <View style={styles.actionRow}>
-          {/* <TouchableOpacity
-            style={[styles.runButton, isRunning && styles.runButtonDisabled]}
-            onPress={handleRunNow}
-            disabled={isRunning}
-          >
-            {isRunning ? <ActivityIndicator color="#FFF" /> : (
-              <>
-                <Ionicons name="play" size={20} color="#FFF" />
-                <Text style={styles.runButtonText}>Run Now</Text>
-              </>
-            )}
-          </TouchableOpacity> */}
+        <View style={styles.mainInfoCard}>
+          <Text style={styles.label}>Schedule</Text>
+          <View style={styles.scheduleRow}>
+            <View style={styles.scheduleItem}>
+              <Text style={styles.scheduleLabel}>FROM</Text>
+              {/* Hardcode */}
+              <Text style={styles.scheduleTime}>{passedAutomation?.startTime || "08:00"}</Text>
+            </View>
+            <View style={styles.scheduleDivider} />
+            <View style={styles.scheduleItem}>
+              <Text style={styles.scheduleLabel}>TO</Text>
+              {/* Hardcode */}
+              <Text style={styles.scheduleTime}>{passedAutomation?.endTime || "22:00"}</Text>
+            </View>
+          </View>
+        </View>
 
+        <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => {
@@ -103,26 +117,39 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
-        {/* DANH SÁCH THIẾT BỊ DẠNG ROW */}
+
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Devices ({devices.length})</Text>
         </View>
+
         {devices.map((item) => (
           <View key={item.id} style={styles.deviceRow}>
             <View style={styles.deviceIconWrapper}>
-              <Ionicons name={item.icon as any} size={24} color={theme.colors.headerBlue} />
+              <Ionicons
+                name={item.icon as any}
+                size={18}
+                color={theme.colors.headerBlue}
+              />
             </View>
 
             <View style={styles.deviceInfo}>
-              <Text style={styles.deviceName}>{item.name}</Text>
-              <Text style={styles.deviceStatus}>{item.status}</Text>
+              <Text style={styles.deviceName}>
+                {(item as any).room ? `${(item as any).room} ${item.name}` : item.name}
+              </Text>
+              <Text style={styles.deviceStatus}>
+                {!item.isActive ? "Disabled • " : "Active • "}
+                {item.type === "light" 
+                  ? `${(item as any).state?.status === "on" ? "On" : "Off"} • ${(item as any).state?.brightness || 0}%`
+                  : item.type === "ac"
+                ? `${(item as any).state?.temp || 24}°C • ${(item as any).state?.mode?.charAt(0).toUpperCase() + (item as any).state?.mode?.slice(1) || "Cool"} • Fan ${(item as any).state?.fanSpeed || "1"}`
+                : item.type === "fan"
+                ? `Speed ${(item as any).state?.speed === "0" ? "Off" : (item as any).state?.speed || "1"}`
+                : item.type === "door"
+                ? (item as any).state?.status?.charAt(0).toUpperCase() + (item as any).state?.status?.slice(1) || "Locked"
+                : "No settings"}
+              </Text>
             </View>
 
-            <Switch
-              value={item.isActive}
-              onValueChange={() => handleToggleDevice(item.id)}
-              trackColor={{ false: "#D1D5DB", true: theme.colors.headerBlue }}
-            />
           </View>
         ))}
       </ScrollView>
@@ -141,29 +168,31 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   mainInfoCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 20,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.lg,
+    marginBottom: theme.layout.sectionGap,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: theme.colors.black,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowRadius: 8,
   },
   label: {
     fontSize: 14,
+    fontWeight: "600",
     color: theme.colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   detailTitle: {
-    ...theme.typography.title,
-    fontSize: 28,
+    fontSize: 22,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
+    paddingVertical: 12,
   },
   divider: {
     height: 1,
-    backgroundColor: "#F0F2F5",
+    backgroundColor: theme.colors.grayLight,
     marginVertical: 15,
   },
   switchRow: {
@@ -172,107 +201,123 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    color: theme.colors.textPrimary,
+    color: theme.colors.textSecondary,
   },
   actionRow: {
     flexDirection: "row",
     gap: 10,
     marginBottom: 30,
-    alignItems: 'center',
+    alignItems: "center",
   },
-  runButton: {
-    flex: 2.5,
-    backgroundColor: theme.colors.headerBlue,
-    borderRadius: 16,
+  editButton: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.radius.md,
     height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-  },
-  runButtonDisabled: { opacity: 0.7 },
-  runButtonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
-  editButton: {
-    flex: 1.5,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
     borderWidth: 1,
-    borderColor: "#E8ECF2",
+    borderColor: theme.colors.border,
   },
-  backButton: {
-    position: 'absolute',
-    left: 3,
-    zIndex: 1,
-    alignItems: 'center'
+  navBtn: {
+    padding: 20,
+    minWidth: 44,
+    alignItems: "center",
   },
   editButtonText: { color: theme.colors.headerBlue, fontSize: 16, fontWeight: "600" },
-  deleteButtonAction: {
-    width: 56,
-    height: 56,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FFE5E5",
-  },
   sectionHeader: {
     marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: theme.colors.textPrimary,
   },
   deviceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.grayLighter,
+  },
+  scheduleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+  },
+  scheduleItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  scheduleLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+    opacity: 0.6,
+  },
+  scheduleTime: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  scheduleDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: 20,
   },
   deviceIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F0F4FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   deviceInfo: {
     flex: 1,
   },
   deviceName: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: "600",
     color: theme.colors.textPrimary,
+    marginBottom: 4,
   },
   deviceStatus: {
     fontSize: 13,
-    color: theme.colors.headerBlue,
-    marginTop: 2,
-    fontWeight: '500',
+    color: theme.colors.textSecondary,
   },
   headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
-    marginTop: 10,
-    minHeight: 40,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: theme.layout.pagePaddingX,
+    paddingVertical: theme.spacing.md,
+    zIndex: 10,
+    backgroundColor: theme.colors.background,
+  },
+  pageTitleContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: -1,
   },
   pageTitle: {
     fontSize: 20,
-    fontWeight: "700" as const,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
+    textAlign: "center",
   },
 });
