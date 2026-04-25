@@ -89,12 +89,7 @@ async def list_devices(
     user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> List[DeviceResponse]:
-    """
-    List all devices owned by the current user.
-    
-    Query Parameters:
-        - user_id: User ID
-    """
+
     devices = await device_repo.get_by_user(user_id)
     
     return [

@@ -13,9 +13,6 @@ class DeviceTypeEnum(str, Enum):
 
 class ModeDevice(BaseModel):
     id: int
-    name: str
-    type: DeviceTypeEnum
-    icon: Optional[str] = None
     state: Dict[str, Any]
 
 class Mode(BaseModel):

@@ -103,6 +103,12 @@ class MqttService:
                         self.repository.save(msg.topic, payload),
                         self._event_loop
                     )
+                    
+                    # Broadcast telemetry to WebSocket clients
+                    asyncio.run_coroutine_threadsafe(
+                        self._broadcast_telemetry(msg.topic, payload),
+                        self._event_loop
+                    )
                
             except Exception as e:
                 print(f" [MQTT] Error saving telemetry data: {e}")
@@ -228,3 +234,22 @@ class MqttService:
         """Get current timestamp in ISO format."""
         from datetime import datetime
         return datetime.utcnow().isoformat()
+
+    @staticmethod
+    async def _broadcast_telemetry(topic: str, payload_str: str):
+        """Parse telemetry payload and broadcast to WebSocket clients."""
+        try:
+            import json as _json
+            from services.websocket_service import WebSocketManager
+            
+            data = _json.loads(payload_str)
+            
+            # Extract hardware device ID from topic
+            # e.g. yolohome/device/yolo_uno_01/telemetry -> yolo_uno_01
+            parts = topic.split('/')
+            device_id = parts[2] if len(parts) >= 3 else "unknown"
+            
+            ws_manager = WebSocketManager.get_instance()
+            await ws_manager.broadcast_telemetry(data)
+        except Exception as e:
+            print(f" [MQTT] Error broadcasting telemetry to WS: {e}")

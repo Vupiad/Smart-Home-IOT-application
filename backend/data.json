@@ -1,0 +1,131 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "user@example.com",
+      "hashed_password": "$pbkdf2-sha256$29000$di5lTCklBCDk/N.b857Tug$az0nwtfWY0WHyMIt2Js0jibv/9G1o7K4mOFiFtNNrHQ",
+      "fullName": "pham xuan vu",
+      "phone": "0987654321",
+      "dateOfBirth": "28/06/2000",
+      "created_at": null
+    }
+  ],
+  "devices": [
+    {
+      "id": 1,
+      "owner_id": 1,
+      "name": "Living Room Light",
+      "device_type": "light",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-04-25T15:12:16.299783",
+      "state": {
+        "status": "off",
+        "color": {
+          "r": 255,
+          "g": 0,
+          "b": 0
+        }
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 2,
+      "owner_id": 1,
+      "name": "Living Room Fan",
+      "device_type": "fan",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-04-25T15:13:46.985323",
+      "state": {
+        "status": "on",
+        "speed": 100
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 3,
+      "owner_id": 1,
+      "name": "Living Room Door",
+      "device_type": "door",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-04-25T15:15:59.424354",
+      "state": {
+        "status": "locked"
+      },
+      "is_online": false,
+      "last_seen": null
+    }
+  ],
+  "modes": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "good afternoon",
+      "isActive": true,
+      "startTime": "16:00",
+      "endTime": "17:00",
+      "devices": [
+        {
+          "id": 1,
+          "state": {
+            "status": "on",
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        {
+          "id": 2,
+          "state": {
+            "status": "on",
+            "speed": 30
+          }
+        }
+      ],
+      "created_at": "2026-04-25T16:03:12.740122"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "name": "good afternoon after",
+      "isActive": true,
+      "startTime": "16:00",
+      "endTime": "17:00",
+      "devices": [
+        {
+          "id": 1,
+          "state": {
+            "status": "on",
+            "color": {
+              "r": 255,
+              "g": 0,
+              "b": 0
+            }
+          }
+        },
+        {
+          "id": 2,
+          "state": {
+            "status": "on",
+            "speed": 100
+          }
+        },
+        {
+          "id": 3,
+          "state": {
+            "status": "locked"
+          }
+        }
+      ],
+      "created_at": "2026-04-25T16:15:45.145252"
+    }
+  ],
+  "_meta": {
+    "next_user_id": 2,
+    "next_device_id": 4,
+    "next_mode_id": 3
+  }
+}

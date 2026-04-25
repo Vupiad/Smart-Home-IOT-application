@@ -7,7 +7,6 @@ router = APIRouter()
 
 @router.get("/current")
 async def get_current_telemetry(
-    device_id: str = Query(None, description="Optional hardware device ID to filter by"),
     repo: MongoSensorRepository = Depends(get_sensor_repo)
 ):
     """

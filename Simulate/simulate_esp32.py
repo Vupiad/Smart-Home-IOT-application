@@ -201,11 +201,11 @@ class ESP32Simulator:
     def _handle_door_command(self, cmd):
         action = cmd.get("action")
         if action == "open":
-            self.door_state = 1 # DOOR_OPENING
+            self.door_state = 0 # DOOR_OPENING
             self.door_status = "opening"
             return True, "door_open"
         elif action == "close":
-            self.door_state = 2 # DOOR_CLOSING
+            self.door_state = 1 # DOOR_CLOSING
             self.door_status = "closing"
             return True, "door_close"
         return False, f"unknown_action_{action}"

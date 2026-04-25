@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from api.v1.endpoints import sensors, auth, devices, modes, device_control, profile
+from api.v1.endpoints import sensors, auth, devices, modes, device_control, profile, ws
 
 from services.mqtt_service import MqttService
 
@@ -48,6 +48,7 @@ app.include_router(devices.router, prefix="/api/v1/devices", tags=["Devices"])
 app.include_router(device_control.router, tags=["Device Control"])
 app.include_router(modes.router, prefix="/api/v1/modes", tags=["Automation Modes"])
 app.include_router(sensors.router, prefix="/api/v1/sensors", tags=["Sensors"])
+app.include_router(ws.router, tags=["WebSocket"])
 
 
 @app.get("/")

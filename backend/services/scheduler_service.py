@@ -57,7 +57,7 @@ class SchedulerService:
                 all_modes = await mode_service._mode_repo.list_all()
                 
                 for mode in all_modes:
-                    if mode.isActive and mode.startTime == current_time_str:
+                    if mode.isActive and (current_time_str >= mode.startTime and current_time_str <= mode.endTime):
                         print(f" [SCHEDULER] Triggering Mode {mode.id}: {mode.name} at {current_time_str}")
                         # Execute in background task to prevent blocking the scheduler
                         asyncio.create_task(

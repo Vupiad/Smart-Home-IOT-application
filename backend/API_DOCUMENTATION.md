@@ -20,7 +20,7 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
 *   **Response (200 OK):**
     ```json
     {
-      "token": "fake-jwt-token-for-1",
+      "message": "Login successful",
       "user": {
         "id": 1,
         "email": "demo@smarthome.app",
@@ -30,6 +30,12 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
       }
     }
     ```
+
+> **Note on Mobile App Integration (Session Cookies):**
+> This API uses **Session Cookies** for authentication instead of JWT. 
+> - **React Native (fetch)**: Add `credentials: 'include'` to your fetch options.
+> - **React Native (axios)**: Set `axios.defaults.withCredentials = true;`.
+> Once configured, React Native's native networking layer (OkHttp/NSURLSession) will automatically persist the session cookie from the login response and attach it to all future requests. No need to manually store tokens!
 
 ### 1.2 Register
 *   **POST** `/auth/register`
@@ -43,15 +49,35 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
       "dateOfBirth": "1995-12-31"
     }
     ```
-*   **Response (200 OK):** Trả về giống Login (Token + User object).
+*   **Response (200 OK):** Trả về giống Login (tự động đăng nhập và set session cookie).
+
+### 1.3 Logout
+*   **POST** `/auth/logout`
+*   **Response (200 OK):** Xóa session cookie của người dùng.
+    ```json
+    {
+      "message": "Logout successful"
+    }
+    ```
 
 ---
 
 ## 2. User Profile (`/profile`)
 
-*Lưu ý: Truyền thêm query `?user_id=1` vào URL trong lúc chờ tích hợp JWT thực tế.*
+### 2.1 Get Profile
+*   **GET** `/profile`
+*   **Response (200 OK):**
+    ```json
+    {
+      "id": 1,
+      "email": "demo@smarthome.app",
+      "fullName": "Demo User",
+      "phone": "0123456789",
+      "dateOfBirth": "1990-01-01"
+    }
+    ```
 
-### 2.1 Update Profile
+### 2.2 Update Profile
 *   **PUT** `/profile`
 *   **Body:**
     ```json
@@ -63,7 +89,7 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
     ```
 *   **Response (200 OK):** Trả về User object sau khi cập nhật.
 
-### 2.2 Change Password
+### 2.3 Change Password
 *   **PUT** `/profile/password`
 *   **Body:**
     ```json
@@ -125,13 +151,26 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
 
 ### 4.1 Update Device State (Gửi lệnh MQTT)
 *   **PUT** `/device-control/{device_id}/state`
-*   **Query:** `?user_id=1`
 *   **Body:** Trạng thái mong muốn của thiết bị (UI format).
     ```json
+    for fan:
     {
       "state": {
         "status": "on",
         "speed": 50
+      }
+    }
+    for led:(use both "status" and "color" for color setting, use only "status" to on/off)
+    {
+      "state": {
+        "status": "on",
+        "color": { "r": 255, "g": 255, "b": 255 }
+      }
+    }
+    for door:
+    {
+      "state": {
+        "status": "locked/unlocked"
       }
     }
     ```
@@ -141,18 +180,14 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
 
 ## 5. Automation Modes (`/modes`)
 
-*Lưu ý: Yêu cầu truyền query `?user_id=1` cho toàn bộ các endpoint CRUD.*
-
 ### 5.1 Create Mode
 *   **POST** `/modes`
 *   **Body:** (Sử dụng 1 timeline chung `startTime`, `endTime` cho danh sách `devices` bên trong)
     ```json
     {
       "name": "Good Morning",
-      "description": "Wake up sequence",
       "startTime": "06:30",
       "endTime": "08:00",
-      "isActive": true,
       "devices": [
         {
           "id": 1,
@@ -161,8 +196,13 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
         {
           "id": 2,
           "state": { "status": "on", "speed": 30 }
+        },
+        {
+          "id": 3,
+          "state": { "status": "locked" }
         }
-      ]
+      ],
+      "isActive": false
     }
     ```
 
@@ -210,13 +250,44 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
 
 **Endpoint:** `ws://localhost:8000/ws`
 
-Sử dụng endpoint này trên Frontend để tự động cập nhật UI mà không cần F5 (Polling). Backend sẽ broadcast sự kiện dưới dạng chuỗi JSON mỗi khi có dữ liệu mới.
+Sử dụng endpoint này trên Frontend/Mobile để tự động cập nhật UI mà không cần polling. Backend sẽ broadcast sự kiện dưới dạng chuỗi JSON mỗi khi có dữ liệu mới.
 
-### Sự kiện 1: Có dữ liệu Telemetry mới (Nhiệt độ, Độ ẩm)
+### 7.1 Kết nối
+
+Kết nối đến WebSocket endpoint. Không cần authentication header — chỉ cần mở kết nối:
+
+```javascript
+// React Native / Web
+const ws = new WebSocket("ws://localhost:8000/ws");
+
+ws.onopen = () => console.log("Connected");
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.type === "telemetry_update") {
+    // Cập nhật nhiệt độ, độ ẩm, ánh sáng trên UI
+    console.log("Sensor:", data);
+  }
+  
+  if (data.type === "device_update") {
+    // Cập nhật trạng thái thiết bị trên UI
+    console.log("Device:", data);
+  }
+};
+
+ws.onclose = () => console.log("Disconnected");
+```
+
+> **Keep-alive:** Client có thể gửi chuỗi `"ping"`, server sẽ trả lời `"pong"`.
+
+### 7.2 Sự kiện: Telemetry Update (Dữ liệu cảm biến mới)
+
+Được broadcast mỗi khi ESP32 gửi telemetry lên MQTT.
+
 ```json
 {
   "type": "telemetry_update",
-  "deviceId": "yolo_uno_01",
   "data": {
     "temperature": 29.5,
     "humidity": 66.3,
@@ -226,8 +297,12 @@ Sử dụng endpoint này trên Frontend để tự động cập nhật UI mà 
 }
 ```
 
-### Sự kiện 2: Thiết bị phản hồi trạng thái thực tế (Ack/State Update)
+### 7.3 Sự kiện: Device Update (Thiết bị thay đổi trạng thái)
+
+Được broadcast mỗi khi thiết bị phản hồi trạng thái thực tế qua MQTT (ack/state).
+
 ```json
+// Light
 {
   "type": "device_update",
   "device_id": 1,
@@ -236,4 +311,24 @@ Sử dụng endpoint này trên Frontend để tự động cập nhật UI mà 
     "color": { "r": 255, "g": 255, "b": 255 }
   }
 }
+
+// Fan
+{
+  "type": "device_update",
+  "device_id": 2,
+  "state": {
+    "status": "on",
+    "speed": 50
+  }
+}
+
+// Door
+{
+  "type": "device_update",
+  "device_id": 3,
+  "state": {
+    "status": "locked"
+  }
+}
 ```
+

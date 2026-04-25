@@ -5,6 +5,7 @@ from api.deps import _get_db_type
 from database.sql.database_factory import db_instance
 from database.json.json_device_repository import JsonDeviceRepository
 from database.sql.repositories.postgres_device_repository import PostgresDeviceRepository
+from services.websocket_service import WebSocketManager
 
 class SyncService:
     """
@@ -77,8 +78,9 @@ class SyncService:
                         
                         elif device.device_type == "door":
                             # doorStatus: "closed" | "opening" | "closing" | "open"
-                            status_val = hardware_state.get("doorStatus", "")
-                            if status_val == "closed":
+                            status_val = hardware_state.get("doorState", "")
+                            print(f" [SYNC] Status: {status_val}")
+                            if status_val == 1:
                                 updated_state["status"] = "locked"
                             else:
                                 updated_state["status"] = "unlocked"
@@ -88,6 +90,10 @@ class SyncService:
                             device.state = updated_state
                             await repo.update(device)
                             print(f" [SYNC] Updated Device {device.id} ({device.name}) to {updated_state}")
+                            
+                            # Broadcast device update to WebSocket clients
+                            ws_manager = WebSocketManager.get_instance()
+                            await ws_manager.broadcast_device_update(device.id, updated_state)
                             
             finally:
                 # Safely close generator to release connection back to pool

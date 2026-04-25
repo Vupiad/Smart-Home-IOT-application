@@ -19,6 +19,24 @@ class ChangePasswordRequest(BaseModel):
     currentPassword: str
     newPassword: str
 
+@router.get("/", response_model=UserResponse)
+async def get_profile(
+    user_id: int = Depends(get_current_user_id),
+    user_repo: IUserRepository = Depends(get_user_repo)
+) -> UserResponse:
+    """Get current user profile information."""
+    user = await user_repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        fullName=user.fullName,
+        phone=user.phone,
+        dateOfBirth=user.dateOfBirth
+    )
+
 @router.put("/", response_model=UserResponse)
 async def update_profile(
     request: UpdateProfileRequest,
