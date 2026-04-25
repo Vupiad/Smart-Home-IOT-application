@@ -182,9 +182,10 @@ FastAPI comes with built-in interactive API documentation.
    ```
 2. **Login** → `POST /api/v1/auth/login`
    ```json
+   **use this account for demo**
    {
-     "email": "test@example.com",
-     "password": "password123"
+     "email": "user@example.com",
+     "password": "password"
    }
    ```
    > After login, Swagger will automatically receive the session cookie. All subsequent API calls in the same browser session will be authenticated.
