@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from database.models.device import Device
-from api.deps import get_device_repo, get_user_repo
+from api.deps import get_device_repo, get_user_repo, get_current_user_id
 from database.repository import IDeviceRepository, IUserRepository
 
 router = APIRouter()
@@ -43,7 +43,7 @@ class DeviceResponse(BaseModel):
 @router.post("/", response_model=DeviceResponse)
 async def create_device(
     request: DeviceCreateRequest,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> DeviceResponse:
@@ -86,7 +86,7 @@ async def create_device(
 
 @router.get("/", response_model=List[DeviceResponse])
 async def list_devices(
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> List[DeviceResponse]:
     """
@@ -114,7 +114,7 @@ async def list_devices(
 @router.get("/{device_id}", response_model=DeviceResponse)
 async def get_device(
     device_id: int,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
     """
@@ -155,7 +155,7 @@ async def get_device(
 async def update_device(
     device_id: int,
     request: DeviceUpdateRequest,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
     """
@@ -207,7 +207,7 @@ async def update_device(
 @router.delete("/{device_id}")
 async def delete_device(
     device_id: int,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> dict:
     """

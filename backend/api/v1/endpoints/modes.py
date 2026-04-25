@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from database.models.mode import Mode, ModeDevice
-from api.deps import get_mode_repo, get_user_repo, get_mode_service
+from api.deps import get_mode_repo, get_user_repo, get_mode_service, get_current_user_id
 from database.repository import IModeRepository, IUserRepository
 from services.mode_service import ModeService
 
@@ -51,7 +51,7 @@ class ModeResponse(BaseModel):
 @router.post("/", response_model=ModeResponse)
 async def create_mode(
     request: ModeCreateRequest,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> ModeResponse:
@@ -91,7 +91,7 @@ async def create_mode(
 
 @router.get("/", response_model=List[ModeResponse])
 async def list_modes(
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> List[ModeResponse]:
     """
@@ -117,7 +117,7 @@ async def list_modes(
 @router.get("/{mode_id}", response_model=ModeResponse)
 async def get_mode(
     mode_id: int,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> ModeResponse:
     """
@@ -152,7 +152,7 @@ async def get_mode(
 async def update_mode(
     mode_id: int,
     request: ModeUpdateRequest,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> ModeResponse:
     """
@@ -199,7 +199,7 @@ async def update_mode(
 @router.delete("/{mode_id}")
 async def delete_mode(
     mode_id: int,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo)
 ) -> dict:
     """
@@ -232,7 +232,7 @@ async def delete_mode(
 async def toggle_mode(
     mode_id: int,
     request: ModeToggleRequest,
-    user_id: int = Query(...),
+    user_id: int = Depends(get_current_user_id),
     mode_repo: IModeRepository = Depends(get_mode_repo),
     mode_service: ModeService = Depends(get_mode_service)
 ) -> dict:

@@ -1,5 +1,5 @@
 import os
-from fastapi import Depends
+from fastapi import Depends, Request, HTTPException, status
 from database.sql.database_factory import db_instance
 from database.nosql.nosql_factory import nosql_instance
 from database.sql.repositories.postgres_user_repository import PostgresUserRepository
@@ -16,6 +16,15 @@ def _get_db_type() -> str:
     """Get configured database type from environment."""
     return os.getenv("DATABASE_TYPE", "postgres")
 
+def get_current_user_id(request: Request) -> int:
+    """Dependency to get the current authenticated user's ID from session."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    return user_id
 
 async def get_user_repo(conn = Depends(db_instance.get_connection)):
     """

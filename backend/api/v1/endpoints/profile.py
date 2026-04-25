@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
-from api.deps import get_user_repo
+from api.deps import get_user_repo, get_current_user_id
 from database.repository import IUserRepository
 from api.security import hash_password, verify_password
 from api.v1.endpoints.auth import UserResponse
@@ -22,7 +22,7 @@ class ChangePasswordRequest(BaseModel):
 @router.put("/", response_model=UserResponse)
 async def update_profile(
     request: UpdateProfileRequest,
-    user_id: int = Query(...), # Mock auth via Query until JWT is implemented
+    user_id: int = Depends(get_current_user_id),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> UserResponse:
     """Update user profile information."""
@@ -47,7 +47,7 @@ async def update_profile(
 @router.put("/password")
 async def change_password(
     request: ChangePasswordRequest,
-    user_id: int = Query(...), # Mock auth via Query until JWT is implemented
+    user_id: int = Depends(get_current_user_id),
     user_repo: IUserRepository = Depends(get_user_repo)
 ):
     """Change user password."""
