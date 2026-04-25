@@ -23,17 +23,17 @@ services:
     volumes:
       - mongodata:/var/lib/mongodb/data
   
-  # MQTT Broker for local testing (optional, can use HiveMQ Cloud instead)
-  # mosquitto:
-  #   image: eclipse-mosquitto:latest
-  #   container_name: local-mqtt
-  #   ports:
-  #     - "1883:1883"      # Standard MQTT port
-  #     - "9001:9001"      # MQTT over WebSockets (for your Mobile App later)
-  #   volumes:
-  #     - ./mosquitto/config:/mosquitto/config
-  #     - ./mosquitto/data:/mosquitto/data
-  #     - ./mosquitto/log:/mosquitto/log
+  MQTT Broker for local testing (optional, can use HiveMQ Cloud instead)
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: local-mqtt
+    ports:
+      - "1883:1883"      # Standard MQTT port
+      - "9001:9001"      # MQTT over WebSockets (for your Mobile App later)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
 volumes:
   pgdata:
   mongodata:

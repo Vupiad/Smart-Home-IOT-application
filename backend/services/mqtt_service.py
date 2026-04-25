@@ -66,37 +66,44 @@ class MqttService:
         self.client.on_message = self._on_message
         self.client.on_connect = self._on_connect
         self.client.on_disconnect = self._on_disconnect
+    def set_repository(self, repository: IRepository):
+        """Set the repository for storing telemetry data."""
+        self.repository = repository
 
-    def _on_connect(self, client, userdata, flags, rc, props):
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
         """Callback for when MQTT client connects."""
-        if rc == 0:
+        if reason_code == 0:
             self._is_connected = True
             print(f" [MQTT] Connected to broker at {self.config['host']}:{self.config['port']}")
             # Subscribe to sensor and feedback topics
-            self.client.subscribe([("yolohome/device/+/telemetry", 0), ("yolohome/device/+/ack", 1), ("yolohome/device/+/state", 1)])
+            self.client.subscribe([("yolohome/device/yolo_uno_01/telemetry", 0), ("yolohome/device/yolo_uno_01/ack", 1), ("yolohome/device/yolo_uno_01/state", 1)])
         else:
-            print(f" [MQTT] Connection failed with code {rc}")
+            print(f" [MQTT] Connection failed with code {reason_code}")
 
-    def _on_disconnect(self, client, userdata, rc):
+    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties):
         """Callback for when MQTT client disconnects."""
         self._is_connected = False
-        if rc != 0:
-            print(f" [MQTT] Unexpected disconnection: {rc}")
+        if reason_code != 0:
+            print(f" [MQTT] Unexpected disconnection: {reason_code}")
 
     def _on_message(self, client, userdata, msg):
         """Handle incoming MQTT messages."""
         print(f" [MQTT] Received {msg.topic}: {msg.payload.decode()}")
         
         # Store sensor data if repository is available
-        if self.repository and mqtt.topic_matches_sub("+/device/+/telemetry", msg.topic):
+        if self.repository and mqtt.topic_matches_sub("yolohome/device/yolo_uno_01/telemetry", msg.topic):
+
             try:
                 payload = msg.payload.decode()
+                
                 # Run async function in event loop if available
                 if self._event_loop:
+                   
                     asyncio.run_coroutine_threadsafe(
                         self.repository.save(msg.topic, payload),
                         self._event_loop
                     )
+               
             except Exception as e:
                 print(f" [MQTT] Error saving telemetry data: {e}")
         

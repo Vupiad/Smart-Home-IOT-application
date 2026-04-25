@@ -53,12 +53,10 @@ class JsonDeviceRepository(IDeviceRepository):
             "name": device.name,
             "device_type": device.device_type,
             "base_topic": device.base_topic,
-            "settings": device.settings,
             "last_online": device.last_online.isoformat() if device.last_online else None,
             "state": device.state,
             "is_online": device.is_online,
             "last_seen": device.last_seen.isoformat() if device.last_seen else None,
-            "supported_actions": device.supported_actions,
         }
         
         # Add to devices list
@@ -133,12 +131,10 @@ class JsonDeviceRepository(IDeviceRepository):
                 device_doc["name"] = device.name
                 device_doc["device_type"] = device.device_type
                 device_doc["base_topic"] = device.base_topic
-                device_doc["settings"] = device.settings
                 device_doc["last_online"] = device.last_online.isoformat() if device.last_online else None
                 device_doc["state"] = device.state
                 device_doc["is_online"] = device.is_online
                 device_doc["last_seen"] = device.last_seen.isoformat() if device.last_seen else None
-                device_doc["supported_actions"] = device.supported_actions
                 
                 devices[i] = device_doc
                 data["devices"] = devices
@@ -210,10 +206,8 @@ class JsonDeviceRepository(IDeviceRepository):
             name=doc.get("name"),
             device_type=doc.get("device_type"),
             base_topic=doc.get("base_topic"),
-            settings=doc.get("settings", {}),
             last_online=last_online,
             state=doc.get("state", {}),
             is_online=doc.get("is_online", False),
-            last_seen=last_seen,
-            supported_actions=doc.get("supported_actions", [])
+            last_seen=last_seen
         )

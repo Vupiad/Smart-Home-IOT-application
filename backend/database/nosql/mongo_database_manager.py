@@ -25,8 +25,3 @@ class MongoManager(IDatabaseManager):
     def get_db(self):
         return self._db
 
-# Create the singleton instance
-mongo_instance = MongoManager(
-    uri=os.getenv("MONGO_URL", "mongodb://localhost:27017"),
-    db_name="smarthome_telemetry"
-)

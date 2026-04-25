@@ -17,7 +17,7 @@ class PostgresDeviceRepository(IDeviceRepository):
                 RETURNING id, last_online;
                 """,
                 (device.owner_id, device.name, device.device_type, 
-                 device.base_topic, json.dumps(device.settings))
+                 device.base_topic, json.dumps(device.state))
             )
             res = await cur.fetchone()
             device.id, device.last_online = res[0], res[1]
@@ -34,7 +34,7 @@ class PostgresDeviceRepository(IDeviceRepository):
                 return None
             return Device(
                 id=row[0], owner_id=row[1], name=row[2], device_type=row[3],
-                base_topic=row[4], settings=row[5], last_online=row[6]
+                base_topic=row[4], state=row[5] if row[5] else {}, last_online=row[6]
             )
 
     async def get_by_user(self, user_id: int) -> List[Device]:
@@ -46,7 +46,7 @@ class PostgresDeviceRepository(IDeviceRepository):
             rows = await cur.fetchall()
             return [Device(
                 id=r[0], owner_id=r[1], name=r[2], device_type=r[3],
-                base_topic=r[4], settings=r[5], last_online=r[6]
+                base_topic=r[4], state=r[5] if r[5] else {}, last_online=r[6]
             ) for r in rows]
 
     async def update(self, device: Device) -> Device:
@@ -59,7 +59,7 @@ class PostgresDeviceRepository(IDeviceRepository):
                 RETURNING id, owner_id, name, device_type, base_topic, settings, last_online;
                 """,
                 (device.owner_id, device.name, device.device_type, device.base_topic,
-                 json.dumps(device.settings), device.id)
+                 json.dumps(device.state), device.id)
             )
             result = await cur.fetchone()
             if not result:
@@ -70,7 +70,7 @@ class PostgresDeviceRepository(IDeviceRepository):
             device.name = result[2]
             device.device_type = result[3]
             device.base_topic = result[4]
-            device.settings = result[5]
+            device.state = result[5] if result[5] else {}
             device.last_online = result[6]
             return device
 
@@ -90,5 +90,5 @@ class PostgresDeviceRepository(IDeviceRepository):
             rows = await cur.fetchall()
             return [Device(
                 id=r[0], owner_id=r[1], name=r[2], device_type=r[3],
-                base_topic=r[4], settings=r[5], last_online=r[6]
+                base_topic=r[4], state=r[5] if r[5] else {}, last_online=r[6]
             ) for r in rows]

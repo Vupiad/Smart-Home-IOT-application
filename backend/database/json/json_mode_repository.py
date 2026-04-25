@@ -1,7 +1,7 @@
 """JSON-based Mode Repository implementation."""
 
 from typing import Optional, List
-from database.models.mode import Mode
+from database.models.mode import Mode, ModeDevice
 from database.repository import IModeRepository
 from .json_connection import JsonConnection
 
@@ -51,8 +51,10 @@ class JsonModeRepository(IModeRepository):
             "id": mode_id,
             "user_id": mode.user_id,
             "name": mode.name,
-            "actions": mode.actions,
-            "is_active": mode.is_active,
+            "isActive": mode.isActive,
+            "startTime": mode.startTime,
+            "endTime": mode.endTime,
+            "devices": [d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in mode.devices],
             "created_at": mode.created_at.isoformat() if mode.created_at else None,
         }
         
@@ -126,8 +128,10 @@ class JsonModeRepository(IModeRepository):
                 # Update fields
                 mode_doc["user_id"] = mode.user_id
                 mode_doc["name"] = mode.name
-                mode_doc["actions"] = mode.actions
-                mode_doc["is_active"] = mode.is_active
+                mode_doc["isActive"] = mode.isActive
+                mode_doc["startTime"] = mode.startTime
+                mode_doc["endTime"] = mode.endTime
+                mode_doc["devices"] = [d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in mode.devices]
                 # created_at is immutable, don't update
                 
                 modes[i] = mode_doc
@@ -190,11 +194,15 @@ class JsonModeRepository(IModeRepository):
         if created_at and isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
         
+        # Safe defaults for legacy records
         return Mode(
             id=doc.get("id"),
             user_id=doc.get("user_id"),
             name=doc.get("name"),
-            actions=doc.get("actions", []),
-            is_active=doc.get("is_active", False),
+            isActive=doc.get("isActive", doc.get("is_active", False)),
+            startTime=doc.get("startTime", "00:00"),
+            endTime=doc.get("endTime", "23:59"),
+            devices=doc.get("devices", doc.get("actions", [])),
             created_at=created_at
         )
+

@@ -13,6 +13,8 @@ import os
 load_dotenv()
 
 from database.sql.database_factory import db_instance
+from database.nosql.nosql_factory import nosql_instance
+from database.nosql.mongo_sensor_repository import MongoSensorRepository
 
 app = FastAPI(
     title="Vũ's Smart Home API",
@@ -75,13 +77,20 @@ async def startup_event():
         if db_type == "postgres":
             await db_instance.connect()
             print(f" [SUCCESS] Database connection pool initialized")
+            
+        # Initialize NoSQL Database (MongoDB) for Telemetry
+        await nosql_instance.connect()
+        print(f" [SUCCESS] NoSQL Database connected")
 
         # Initialize MQTT service
         mqtt_broker = os.getenv("MQTT_BROKER", "localhost")
         mqtt_port = int(os.getenv("MQTT_PORT", "1883"))
         print(f" [CONFIG] MQTT Broker: {mqtt_broker}:{mqtt_port}")
         
+        import asyncio
         mqtt_service = MqttService.get_instance()
+        mqtt_service.set_repository(MongoSensorRepository(nosql_instance.get_db()))
+        mqtt_service.set_event_loop(asyncio.get_running_loop())
         mqtt_service.start()
         print(f" [SUCCESS] MQTT Service connected")
         
@@ -121,5 +130,8 @@ async def shutdown_event():
     if db_type == "postgres":
         await db_instance.disconnect()
         print("[SHUTDOWN] Database disconnected")
+        
+    await nosql_instance.disconnect()
+    print("[SHUTDOWN] NoSQL Database disconnected")
     
     print("[SHUTDOWN] Goodbye!\n")

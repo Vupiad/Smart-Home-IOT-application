@@ -6,7 +6,8 @@ from database.models.user import User
 from api.deps import get_user_repo
 from api.security import (
     hash_password,
-    verify_password
+    verify_password,
+    create_access_token,
 )
 from database.repository import IUserRepository
 from typing import Optional
@@ -60,9 +61,7 @@ async def login(
             detail="Invalid email or password"
         )
     
-    # Normally we would generate a real JWT token here.
-    # We will return a dummy token for now, or you can integrate standard JWT logic.
-    token = f"fake-jwt-token-for-{user.id}"
+    token = create_access_token({"sub": str(user.id), "email": user.email})
     
     return LoginResponse(
         token=token,
@@ -100,7 +99,7 @@ async def register(
     )
     
     created_user = await user_repo.create(user)
-    token = f"fake-jwt-token-for-{created_user.id}"
+    token = create_access_token({"sub": str(created_user.id), "email": created_user.email})
     
     return LoginResponse(
         token=token,

@@ -16,3 +16,5 @@ pydantic>=2.7.0
 pydantic[email]
 python-multipart==0.0.9
 passlib[bcrypt]==1.7.4
+
+apscheduler
