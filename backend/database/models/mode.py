@@ -20,6 +20,7 @@ class Mode(BaseModel):
     user_id: int
     name: str
     isActive: bool = False
+    is_activated: bool = False
     startTime: str
     endTime: str
     devices: List[ModeDevice] = []

@@ -21,7 +21,7 @@
       "state": {
         "status": "off",
         "color": {
-          "r": 255,
+          "r": 0,
           "g": 0,
           "b": 0
         }
@@ -37,8 +37,8 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:13:46.985323",
       "state": {
-        "status": "on",
-        "speed": 100
+        "status": "off",
+        "speed": 0
       },
       "is_online": false,
       "last_seen": null
@@ -51,7 +51,7 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:15:59.424354",
       "state": {
-        "status": "locked"
+        "status": "unlocked"
       },
       "is_online": false,
       "last_seen": null
@@ -63,8 +63,8 @@
       "user_id": 1,
       "name": "good afternoon",
       "isActive": true,
-      "startTime": "16:00",
-      "endTime": "17:00",
+      "startTime": "17:00",
+      "endTime": "17:18",
       "devices": [
         {
           "id": 1,
@@ -85,7 +85,8 @@
           }
         }
       ],
-      "created_at": "2026-04-25T16:03:12.740122"
+      "created_at": "2026-04-25T16:03:12.740122",
+      "is_activated": false
     },
     {
       "id": 2,

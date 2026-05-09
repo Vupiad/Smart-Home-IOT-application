@@ -64,6 +64,42 @@ class ModeService:
         
         return results
     
+    async def deactivate_mode(
+        self,
+        user_id: int,
+        mode_id: int,
+        parallel: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Deactivate all devices in a mode by turning them off or closing them.
+        """
+        mode = await self._mode_repo.get_by_id(mode_id)
+        if not mode:
+            raise ValueError(f"Mode {mode_id} not found")
+        
+        if mode.user_id != user_id:
+            raise ValueError(f"Mode {mode_id} not owned by user {user_id}")
+            
+        import copy
+        deactivation_mode = copy.deepcopy(mode)
+        for device_item in deactivation_mode.devices:
+            # We want to turn them off but preserve other settings (like color, speed).
+            # 'off' will map to off for lights and fans, and 'close' for doors.
+            if "status" in device_item.state:
+                device_item.state["status"] = "off"
+            else:
+                device_item.state["status"] = "off"
+        if parallel:
+            execution_task = asyncio.create_task(
+                self._execute_parallel(deactivation_mode, user_id)
+            )
+        else:
+            execution_task = asyncio.create_task(
+                self._execute_sequential(deactivation_mode, user_id)
+            )
+            
+        return await execution_task
+    
     async def _execute_sequential(
         self,
         mode: Mode,

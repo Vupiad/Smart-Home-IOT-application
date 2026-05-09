@@ -52,6 +52,7 @@ class JsonModeRepository(IModeRepository):
             "user_id": mode.user_id,
             "name": mode.name,
             "isActive": mode.isActive,
+            "is_activated": mode.is_activated,
             "startTime": mode.startTime,
             "endTime": mode.endTime,
             "devices": [d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in mode.devices],
@@ -129,6 +130,7 @@ class JsonModeRepository(IModeRepository):
                 mode_doc["user_id"] = mode.user_id
                 mode_doc["name"] = mode.name
                 mode_doc["isActive"] = mode.isActive
+                mode_doc["is_activated"] = mode.is_activated
                 mode_doc["startTime"] = mode.startTime
                 mode_doc["endTime"] = mode.endTime
                 mode_doc["devices"] = [d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in mode.devices]
@@ -200,6 +202,7 @@ class JsonModeRepository(IModeRepository):
             user_id=doc.get("user_id"),
             name=doc.get("name"),
             isActive=doc.get("isActive", doc.get("is_active", False)),
+            is_activated=doc.get("is_activated", False),
             startTime=doc.get("startTime", "00:00"),
             endTime=doc.get("endTime", "23:59"),
             devices=doc.get("devices", doc.get("actions", [])),

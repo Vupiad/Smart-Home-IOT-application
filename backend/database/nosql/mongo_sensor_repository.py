@@ -40,13 +40,9 @@ class MongoSensorRepository(IRepository):
             
         return results
 
-    async def get_latest_telemetry(self, device_id: str = None):
+    async def get_latest_telemetry(self):
         """Fetches the most recent telemetry reading."""
-        query = {}
-        if device_id:
-            query = {"deviceId": device_id}
-            
-        doc = await self.db.sensor_logs.find_one(query, sort=[("timestamp", -1)])
+        doc = await self.db.sensor_logs.find_one(sort=[("timestamp", -1)])
         if doc:
             doc["_id"] = str(doc["_id"])
         return doc

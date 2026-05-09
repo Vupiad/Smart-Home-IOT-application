@@ -57,12 +57,26 @@ class SchedulerService:
                 all_modes = await mode_service._mode_repo.list_all()
                 
                 for mode in all_modes:
-                    if mode.isActive and (current_time_str >= mode.startTime and current_time_str <= mode.endTime):
-                        print(f" [SCHEDULER] Triggering Mode {mode.id}: {mode.name} at {current_time_str}")
-                        # Execute in background task to prevent blocking the scheduler
-                        asyncio.create_task(
-                            mode_service.execute_mode(mode.user_id, mode.id, parallel=True)
-                        )
+                    if mode.isActive:
+                        if current_time_str >= mode.startTime and current_time_str <= mode.endTime:
+                            if not mode.is_activated:
+                                print(f" [SCHEDULER] Triggering Mode {mode.id}: {mode.name} at {current_time_str}")
+                                # Execute in background task to prevent blocking the scheduler
+                                asyncio.create_task(
+                                    mode_service.execute_mode(mode.user_id, mode.id, parallel=True)
+                                )
+                                # Mark as activated and update
+                                mode.is_activated = True
+                                await mode_service._mode_repo.update(mode)
+                        else:
+                            # Out of running time
+                            if mode.is_activated:
+                                print(f" [SCHEDULER] Deactivating Mode {mode.id}: {mode.name} at {current_time_str}")
+                                asyncio.create_task(
+                                    mode_service.deactivate_mode(mode.user_id, mode.id, parallel=True)
+                                )
+                                mode.is_activated = False
+                                await mode_service._mode_repo.update(mode)
             finally:
                 try:
                     await conn_gen.aclose()
