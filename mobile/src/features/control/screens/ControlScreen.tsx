@@ -20,7 +20,7 @@ import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 import { ControlStackParamList } from "../../../navigation/TabNavigator";
 import { DeviceType } from "../types";
 import { theme } from "../../../theme";
-import { addDevice } from "../services/device.service";
+import { addDevice } from "../services/deviceService";
 
 type DeviceFilter = "all" | "fan" | "ac" | "light" | "door";
 

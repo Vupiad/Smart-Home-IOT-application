@@ -4,16 +4,16 @@ from api.v1.endpoints import sensors, auth, devices, modes, device_control
 api_router = APIRouter()
 
 # Authentication endpoints
-api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication & Sessions"])
 
 # Device management endpoints
-api_router.include_router(devices.router, prefix="/devices", tags=["Devices"])
+api_router.include_router(devices.router, prefix="/devices", tags=["Device Management"])
 
 # Device control endpoints (MQTT-based)
-api_router.include_router(device_control.router, tags=["Device Control"])
+api_router.include_router(device_control.router, tags=["Device Control (MQTT Commands)"])
 
 # Mode/Automation endpoints
-api_router.include_router(modes.router, prefix="/modes", tags=["Automation Modes"])
+api_router.include_router(modes.router, prefix="/modes", tags=["Automation & Scenes"])
 
 # Sensor data endpoints
-api_router.include_router(sensors.router, prefix="/sensors", tags=["Sensors"])
+api_router.include_router(sensors.router, prefix="/sensors", tags=["Sensor Data"])

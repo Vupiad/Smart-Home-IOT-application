@@ -195,8 +195,18 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
         "status": "locked/unlocked"
       }
     }
+    for AC:
+    {
+      "state": {
+        "status": "on/off",
+        "temperature": 24,
+        "mode": "cool/heat/auto",
+        "fanSpeed": 1
+      }
+    }
     ```
 *   **Response (200 OK):** Trả về state mới và lập tức publish lệnh xuống MQTT để thiết bị thay đổi.
+*   **Lưu ý đồng bộ:** Khi publish thành công, backend cũng merge state này vào DB để tránh lệch dữ liệu FE/BE.
 
 ---
 

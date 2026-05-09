@@ -21,13 +21,14 @@
       "state": {
         "status": "on",
         "color": {
-          "r": 246,
-          "g": 193,
-          "b": 38
+          "r": 99,
+          "g": 0,
+          "b": 101
         },
         "brightness": 50,
         "room": "Bedroom",
-        "subtitle": ""
+        "subtitle": "",
+        "timerMinutes": 2
       },
       "is_online": false,
       "last_seen": null
@@ -75,7 +76,7 @@
         "room": "Living room",
         "subtitle": "New device",
         "status": "on",
-        "brightness": 40,
+        "brightness": 45,
         "color": {
           "r": 102,
           "g": 102,
@@ -88,19 +89,19 @@
     {
       "id": 5,
       "owner_id": 1,
-      "name": "\u0110\u00e8n ph\u00f2ng ng\u1ee7",
+      "name": "\u0110\u00e8n \u0111\u1ecdc s\u00e1ch ph\u00f2ng ng\u1ee7",
       "device_type": "lamp",
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-05-09T20:28:34.324103",
       "state": {
-        "status": "off",
+        "status": "on",
         "brightness": 40,
         "color": {
-          "r": 102,
-          "g": 102,
-          "b": 102
+          "r": 41,
+          "g": 41,
+          "b": 41
         },
-        "room": "Living room",
+        "room": "Bedroom",
         "subtitle": ""
       },
       "is_online": false,
@@ -115,7 +116,11 @@
       "last_online": "2026-05-09T20:32:14.081631",
       "state": {
         "room": "Kitchen",
-        "subtitle": ""
+        "subtitle": "",
+        "fanSpeed": 2,
+        "mode": "auto",
+        "timerMinutes": 1438,
+        "temperature": 25
       },
       "is_online": false,
       "last_seen": null

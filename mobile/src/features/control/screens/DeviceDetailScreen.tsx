@@ -34,7 +34,7 @@ import {
   setLightTimer,
   toggleDevicePower,
   updateDeviceInfo,
-} from "../services/device.service";
+} from "../services/deviceService";
 import {
   ACDeviceDetail,
   DeviceDetail,

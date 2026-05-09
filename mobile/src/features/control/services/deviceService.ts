@@ -471,12 +471,8 @@ export async function toggleDevicePower(
     const color = applyBrightnessToRgb(d.colorHex, d.brightness);
     await putDeviceControlState(numId, {
       status: isOn ? "on" : "off",
-      ...(isOn ? { color } : {}),
-    });
-    await putDeviceMergedState(numId, {
-      status: isOn ? "on" : "off",
       brightness: d.brightness,
-      color,
+      ...(isOn ? { color } : {}),
     });
     return;
   }
@@ -487,10 +483,6 @@ export async function toggleDevicePower(
       status: isOn ? "on" : "off",
       ...(isOn ? { speed: levelToSpeed(d.level) } : {}),
     });
-    await putDeviceMergedState(numId, {
-      status: isOn ? "on" : "off",
-      speed: isOn ? levelToSpeed(d.level) : 0,
-    });
     return;
   }
 
@@ -498,14 +490,11 @@ export async function toggleDevicePower(
     await putDeviceControlState(numId, {
       status: isOn ? "unlocked" : "locked",
     });
-    await putDeviceMergedState(numId, {
-      status: isOn ? "unlocked" : "locked",
-    });
     return;
   }
 
   if (detail.type === "ac") {
-    await putDeviceMergedState(numId, { status: isOn ? "on" : "off" });
+    await putDeviceControlState(numId, { status: isOn ? "on" : "off" });
   }
 }
 
@@ -528,7 +517,6 @@ export async function setFanLevel(
     status: detail.isOn ? "on" : "off",
     ...(detail.isOn ? { speed: levelToSpeed(level) } : {}),
   });
-  await putDeviceMergedState(numId, { speed: levelToSpeed(level) });
 }
 
 export async function setFanTimer(
@@ -572,7 +560,7 @@ export async function setACTemperature(
     return;
   }
 
-  await putDeviceMergedState(numId, { temperature: safe });
+  await putDeviceControlState(numId, { temperature: safe });
 }
 
 export async function setACMode(
@@ -590,7 +578,7 @@ export async function setACMode(
     return;
   }
 
-  await putDeviceMergedState(numId, { mode });
+  await putDeviceControlState(numId, { mode });
 }
 
 export async function setACFanSpeed(
@@ -608,7 +596,7 @@ export async function setACFanSpeed(
     return;
   }
 
-  await putDeviceMergedState(numId, { fanSpeed });
+  await putDeviceControlState(numId, { fanSpeed });
 }
 
 export async function setACTimer(
@@ -653,7 +641,12 @@ export async function setLightBrightness(
 
   if (detail.isOn) {
     const color = applyBrightnessToRgb(detail.colorHex, safe);
-    await putDeviceControlState(numId, { status: "on", color });
+    await putDeviceControlState(numId, {
+      status: "on",
+      color,
+      brightness: safe,
+    });
+    return;
   }
   await putDeviceMergedState(numId, { brightness: safe });
 }
@@ -676,6 +669,7 @@ export async function setLightColor(
   if (detail.isOn) {
     const color = applyBrightnessToRgb(colorHex, detail.brightness);
     await putDeviceControlState(numId, { status: "on", color });
+    return;
   }
   const rgb = hexToRgb(colorHex);
   await putDeviceMergedState(numId, { color: rgb });

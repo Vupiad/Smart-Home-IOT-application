@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import { getDevices } from "../../features/control/services/device.service";
+import { getDevices } from "../../features/control/services/deviceService";
 import { useAuthContext } from "../../features/auth/state/AuthContext";
 
 import { DEVICE_CATALOG, DeviceCatalogItem } from "../constants/devices";

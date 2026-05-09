@@ -8,7 +8,7 @@ from database.models.device import Device
 from api.deps import get_device_repo, get_user_repo, get_current_user_id
 from database.repository import IDeviceRepository, IUserRepository
 
-router = APIRouter()
+router = APIRouter(tags=["Device Management"])
 
 
 # Request/Response Models
@@ -62,19 +62,23 @@ class DeviceResponse(BaseModel):
 
 
 
-@router.post("/", response_model=DeviceResponse)
+@router.post(
+    "/",
+    response_model=DeviceResponse,
+    summary="Create a device record",
+    description=(
+        "Create a new device in the database. Use this for device metadata "
+        "such as name, type, MQTT topic, and initial state (room, subtitle, "
+        "status, color, brightness, speed, etc.)."
+    ),
+)
 async def create_device(
     request: DeviceCreateRequest,
     user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo),
     user_repo: IUserRepository = Depends(get_user_repo)
 ) -> DeviceResponse:
-    """
-    Create a new device.
-    
-    Query Parameters:
-        - user_id: User ID
-    """
+    """Create a new device record."""
     # Verify user exists
     user = await user_repo.get_by_id(user_id)
     if not user:
@@ -106,7 +110,12 @@ async def create_device(
     )
 
 
-@router.get("/", response_model=List[DeviceResponse])
+@router.get(
+    "/",
+    response_model=List[DeviceResponse],
+    summary="List devices for the current user",
+    description="Return all devices owned by the current user (or the test user fallback).",
+)
 async def list_devices(
     #user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
@@ -129,21 +138,18 @@ async def list_devices(
     ]
 
 
-@router.get("/{device_id}", response_model=DeviceResponse)
+@router.get(
+    "/{device_id}",
+    response_model=DeviceResponse,
+    summary="Get device details",
+    description="Get a single device by ID, including its saved state and metadata.",
+)
 async def get_device(
     device_id: int,
     user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
-    """
-    Get a specific device by ID.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - device_id: Device ID
-    """
+    """Get a specific device by ID."""
     device = await device_repo.get_by_id(device_id)
     if not device:
         raise HTTPException(
@@ -169,22 +175,23 @@ async def get_device(
     )
 
 
-@router.put("/{device_id}", response_model=DeviceResponse)
+@router.put(
+    "/{device_id}",
+    response_model=DeviceResponse,
+    summary="Update device metadata or saved state",
+    description=(
+        "Update editable device fields such as name, type, MQTT topic, and "
+        "state values like room or subtitle. This does not send realtime MQTT "
+        "commands; it only persists data in the database."
+    ),
+)
 async def update_device(
     device_id: int,
     request: DeviceUpdateRequest,
     user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> DeviceResponse:
-    """
-    Update a device.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - device_id: Device ID
-    """
+    """Update a device."""
     device = await device_repo.get_by_id(device_id)
     if not device:
         raise HTTPException(
@@ -222,21 +229,17 @@ async def update_device(
     )
 
 
-@router.delete("/{device_id}")
+@router.delete(
+    "/{device_id}",
+    summary="Delete a device",
+    description="Delete a device record from the database for the current user.",
+)
 async def delete_device(
     device_id: int,
     user_id: int = Depends(get_current_user_id),
     device_repo: IDeviceRepository = Depends(get_device_repo)
 ) -> dict:
-    """
-    Delete a device.
-    
-    Query Parameters:
-        - user_id: User ID
-    
-    Path Parameters:
-        - device_id: Device ID
-    """
+    """Delete a device."""
     device = await device_repo.get_by_id(device_id)
     if not device:
         raise HTTPException(
