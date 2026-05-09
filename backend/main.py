@@ -13,13 +13,13 @@ import os
 
 load_dotenv()
 
-from database.sql.database_factory import db_instance
+from database.json.json_database_manager import db_instance
 from database.nosql.nosql_factory import nosql_instance
 from database.nosql.mongo_sensor_repository import MongoSensorRepository
 
 app = FastAPI(
-    title="Vũ's Smart Home API",
-    description="IoT Smart Home Control System with JSON/PostgreSQL support",
+    title="Vũ's Home API",
+    description="IoT Home Control System",
     version="1.0.0"
 )
 
@@ -54,12 +54,10 @@ app.include_router(ws.router, tags=["WebSocket"])
 @app.get("/")
 def read_root():
     """Health check endpoint."""
-    db_type = os.getenv("DATABASE_TYPE", "postgres")
     return {
         "status": "Online",
         "owner": "Vũ",
-        "database": db_type,
-        "message": "Smart Home IoT API is running"
+        "message": "Home IoT API is running"
     }
 
 
@@ -68,7 +66,7 @@ async def health_check():
     """Health check with database initialization status."""
     return {
         "status": "healthy",
-        "database": os.getenv("DATABASE_TYPE", "postgres"),
+        "database": "json",
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
@@ -80,14 +78,10 @@ async def startup_event():
     print(" [STARTUP] Smart Home IoT Application Starting")
     print("="*60)
     
-    db_type = os.getenv("DATABASE_TYPE", "postgres")
-    print(f" [CONFIG] Database Type: {db_type}")
-    
     try:
-        # Initialize database
-        if db_type == "postgres":
-            await db_instance.connect()
-            print(f" [SUCCESS] Database connection pool initialized")
+        # Initialize JSON database
+        await db_instance.connect()
+        print(f" [SUCCESS] JSON Database connected")
             
         # Initialize NoSQL Database (MongoDB) for Telemetry
         await nosql_instance.connect()
@@ -137,10 +131,8 @@ async def shutdown_event():
     await mqtt_service.stop()
     print("[SHUTDOWN] MQTT Service stopped")
     
-    db_type = os.getenv("DATABASE_TYPE", "postgres")
-    if db_type == "postgres":
-        await db_instance.disconnect()
-        print("[SHUTDOWN] Database disconnected")
+    await db_instance.disconnect()
+    print("[SHUTDOWN] JSON Database disconnected")
         
     await nosql_instance.disconnect()
     print("[SHUTDOWN] NoSQL Database disconnected")

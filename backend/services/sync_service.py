@@ -1,10 +1,8 @@
 import json
 import asyncio
 from typing import Dict, Any
-from api.deps import _get_db_type
-from database.sql.database_factory import db_instance
+from database.json.json_database_manager import db_instance
 from database.json.json_device_repository import JsonDeviceRepository
-from database.sql.repositories.postgres_device_repository import PostgresDeviceRepository
 from services.websocket_service import WebSocketManager
 
 class SyncService:
@@ -20,11 +18,7 @@ class SyncService:
         except StopAsyncIteration:
             raise Exception("Could not get DB connection")
             
-        db_type = _get_db_type()
-        if db_type == "json":
-            repo = JsonDeviceRepository(conn)
-        else:
-            repo = PostgresDeviceRepository(conn)
+        repo = JsonDeviceRepository(conn)
         
         return repo, conn_generator, conn
 

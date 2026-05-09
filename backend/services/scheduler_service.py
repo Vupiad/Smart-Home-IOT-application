@@ -3,12 +3,9 @@
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
-from database.sql.database_factory import db_instance
-from api.deps import _get_db_type
+from database.json.json_database_manager import db_instance
 from database.json.json_mode_repository import JsonModeRepository
 from database.json.json_device_repository import JsonDeviceRepository
-from database.sql.repositories.postgres_mode_repository import PostgresModeRepository
-from database.sql.repositories.postgres_device_repository import PostgresDeviceRepository
 from services.mode_service import ModeService
 from services.device_service import DeviceService
 from services.mqtt_service import MqttService
@@ -30,13 +27,8 @@ class SchedulerService:
         except StopAsyncIteration:
             raise Exception("Could not get DB connection")
             
-        db_type = _get_db_type()
-        if db_type == "json":
-            mode_repo = JsonModeRepository(conn)
-            device_repo = JsonDeviceRepository(conn)
-        else:
-            mode_repo = PostgresModeRepository(conn)
-            device_repo = PostgresDeviceRepository(conn)
+        mode_repo = JsonModeRepository(conn)
+        device_repo = JsonDeviceRepository(conn)
             
         mqtt_service = MqttService.get_instance()
         device_service = DeviceService(device_repo, mqtt_service)

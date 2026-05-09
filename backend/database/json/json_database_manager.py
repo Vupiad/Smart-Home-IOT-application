@@ -75,3 +75,5 @@ class JsonDatabaseManager(IDatabaseManager):
             # Data is persisted on successful context exit
             # (only if no exceptions occurred in the endpoint)
             pass
+
+db_instance = JsonDatabaseManager("data.json")
