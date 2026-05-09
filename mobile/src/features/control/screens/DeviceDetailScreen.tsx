@@ -4,20 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
 import type { ControlStackParamList } from "../../../navigation/TabNavigator";
-import { DEVICE_CATALOG } from "../../../shared/constants/devices";
 import ACControl from "../components/ACControl";
+import DoorControl from "../components/DoorControl";
 import FanControl from "../components/FanControl";
 import LightControl from "../components/LightControl";
 import {
+  deleteDevice,
   getDeviceDetail,
   setACFanSpeed,
   setACMode,
@@ -29,28 +33,50 @@ import {
   setLightColor,
   setLightTimer,
   toggleDevicePower,
+  updateDeviceInfo,
 } from "../services/device.service";
 import {
   ACDeviceDetail,
   DeviceDetail,
+  DoorDeviceDetail,
   FanDeviceDetail,
   LightDeviceDetail,
 } from "../types";
+import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 
 type Props = NativeStackScreenProps<ControlStackParamList, "DeviceDetail">;
 
 export default function DeviceDetailScreen({ navigation, route }: Props) {
   const { deviceId, title } = route.params;
+  const { refreshDevices, updateDeviceById, removeDeviceById } =
+    useSmartHomeContext();
   const [detail, setDetail] = useState<DeviceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const catalogDevice = DEVICE_CATALOG.find((device) => device.id === deviceId);
+
+  // Edit modal state
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRoom, setEditRoom] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
+  const [isEditSaving, setIsEditSaving] = useState(false);
+
+  // Delete modal state
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Menu state
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const loadDetail = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getDeviceDetail(deviceId);
       setDetail(response);
+      // Initialize edit fields
+      setEditName(response.name);
+      setEditRoom((response as any)?.state?.room || "");
+      setEditSubtitle((response as any)?.state?.subtitle || "");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Load device detail failed";
@@ -92,12 +118,80 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    void runUpdate(
-      async () => {
-        await toggleDevicePower(detail.id, isOn);
-      },
-      { ...detail, isOn },
-    );
+    let nextDetail: DeviceDetail = { ...detail, isOn } as DeviceDetail;
+    if (detail.type === "door") {
+      const d = detail as DoorDeviceDetail;
+      nextDetail = {
+        ...d,
+        isOn,
+        lockStatus: isOn ? "unlocked" : "locked",
+      };
+    }
+
+    void runUpdate(async () => {
+      await toggleDevicePower(nextDetail, isOn);
+    }, nextDetail);
+  };
+
+  const openEditModal = () => {
+    setIsMenuVisible(false);
+    setIsEditModalVisible(true);
+  };
+
+  const openDeleteModal = () => {
+    setIsMenuVisible(false);
+    setIsDeleteModalVisible(true);
+  };
+
+  const saveDeviceInfo = async () => {
+    if (!detail || !editName.trim()) {
+      Alert.alert("Error", "Device name is required");
+      return;
+    }
+
+    setIsEditSaving(true);
+    try {
+      await updateDeviceInfo(deviceId, {
+        name: editName.trim(),
+        room: editRoom.trim(),
+        subtitle: editSubtitle.trim(),
+      });
+
+      // Reload device detail
+      await loadDetail();
+      updateDeviceById(deviceId, {
+        name: editName.trim(),
+        room: editRoom.trim(),
+        subtitle: editSubtitle.trim(),
+      });
+      await refreshDevices();
+      setIsEditModalVisible(false);
+      Alert.alert("Success", "Device updated successfully");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update device";
+      Alert.alert("Error", message);
+    } finally {
+      setIsEditSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteDevice(deviceId);
+      removeDeviceById(deviceId);
+      await refreshDevices();
+      setIsDeleteModalVisible(false);
+      Alert.alert("Success", "Device deleted successfully");
+      navigation.goBack();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete device";
+      Alert.alert("Error", message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (loading || !detail) {
@@ -109,7 +203,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const displayTitle = catalogDevice?.name ?? title;
+  const displayTitle = detail.name || title;
 
   return (
     <View style={styles.container}>
@@ -120,15 +214,42 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
 
         <Text style={styles.title}>{displayTitle}</Text>
 
-        <Switch
-          trackColor={{ false: "#D6DBE3", true: "blue" }}
-          thumbColor={detail.isOn ? "#FFFFFF" : "#F2F2F2"}
-          ios_backgroundColor="#D6DBE3"
-          value={detail.isOn}
-          onValueChange={onTogglePower}
-          disabled={saving}
-        />
+        <View style={styles.headerActions}>
+          <Switch
+            trackColor={{ false: "#D6DBE3", true: "blue" }}
+            thumbColor={detail.isOn ? "#FFFFFF" : "#F2F2F2"}
+            ios_backgroundColor="#D6DBE3"
+            value={detail.isOn}
+            onValueChange={onTogglePower}
+            disabled={saving}
+          />
+          <Pressable
+            style={styles.menuButton}
+            onPress={() => setIsMenuVisible(!isMenuVisible)}
+          >
+            <Ionicons name="ellipsis-vertical" size={24} color="#ffffff" />
+          </Pressable>
+        </View>
       </View>
+
+      {/* Menu Dropdown */}
+      {isMenuVisible && (
+        <View style={styles.menuDropdown}>
+          <Pressable style={styles.menuItem} onPress={openEditModal}>
+            <Ionicons name="pencil" size={18} color="#2D5BFF" />
+            <Text style={styles.menuItemText}>Edit Info</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.menuItem, styles.menuItemDanger]}
+            onPress={openDeleteModal}
+          >
+            <Ionicons name="trash" size={18} color="#FF6B6B" />
+            <Text style={[styles.menuItemText, { color: "#FF6B6B" }]}>
+              Delete Device
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.body}>
         {detail.type === "fan" && (
@@ -137,13 +258,13 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
             onChangeLevel={(level) => {
               const nextState: FanDeviceDetail = { ...detail, level };
               void runUpdate(async () => {
-                await setFanLevel(detail.id, level);
+                await setFanLevel(nextState, level);
               }, nextState);
             }}
             onChangeTimer={(timerMinutes) => {
               const nextState: FanDeviceDetail = { ...detail, timerMinutes };
               void runUpdate(async () => {
-                await setFanTimer(detail.id, timerMinutes);
+                await setFanTimer(nextState, timerMinutes);
               }, nextState);
             }}
           />
@@ -160,19 +281,19 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               };
 
               void runUpdate(async () => {
-                await setACTemperature(detail.id, safeTemperature);
+                await setACTemperature(nextState, safeTemperature);
               }, nextState);
             }}
             onChangeMode={(mode) => {
               const nextState: ACDeviceDetail = { ...detail, mode };
               void runUpdate(async () => {
-                await setACMode(detail.id, mode);
+                await setACMode(nextState, mode);
               }, nextState);
             }}
             onChangeFanSpeed={(fanSpeed) => {
               const nextState: ACDeviceDetail = { ...detail, fanSpeed };
               void runUpdate(async () => {
-                await setACFanSpeed(detail.id, fanSpeed);
+                await setACFanSpeed(nextState, fanSpeed);
               }, nextState);
             }}
             onChangeTimer={(timerMinutes) => {
@@ -182,10 +303,14 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 timerMinutes: safeTimer,
               };
               void runUpdate(async () => {
-                await setACTimer(detail.id, safeTimer);
+                await setACTimer(nextState, safeTimer);
               }, nextState);
             }}
           />
+        )}
+
+        {detail.type === "door" && (
+          <DoorControl detail={detail as DoorDeviceDetail} />
         )}
 
         {detail.type === "light" && (
@@ -199,13 +324,13 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               };
 
               void runUpdate(async () => {
-                await setLightBrightness(detail.id, safeBrightness);
+                await setLightBrightness(nextState, safeBrightness);
               }, nextState);
             }}
             onChangeColor={(colorHex) => {
               const nextState: LightDeviceDetail = { ...detail, colorHex };
               void runUpdate(async () => {
-                await setLightColor(detail.id, colorHex);
+                await setLightColor(nextState, colorHex);
               }, nextState);
             }}
             onChangeTimer={(timerMinutes) => {
@@ -215,12 +340,142 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 timerMinutes: safeTimer,
               };
               void runUpdate(async () => {
-                await setLightTimer(detail.id, safeTimer);
+                await setLightTimer(nextState, safeTimer);
               }, nextState);
             }}
           />
         )}
       </ScrollView>
+
+      {/* Edit Device Info Modal */}
+      <Modal
+        visible={isEditModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
+              <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.modalBody}
+            >
+              <Text style={styles.inputLabel}>Tên thiết bị</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="VD: Đèn trần"
+                value={editName}
+                onChangeText={setEditName}
+                editable={!isEditSaving}
+              />
+
+              <Text style={styles.inputLabel}>Phòng</Text>
+              <View style={styles.typeSelector}>
+                {["Living room", "Bedroom", "Kitchen", "Garage"].map((room) => (
+                  <TouchableOpacity
+                    key={room}
+                    style={[
+                      styles.typeChip,
+                      editRoom === room && styles.typeChipActive,
+                    ]}
+                    onPress={() => setEditRoom(room)}
+                    disabled={isEditSaving}
+                  >
+                    <Text
+                      style={[
+                        styles.typeChipText,
+                        editRoom === room && styles.typeChipTextActive,
+                      ]}
+                    >
+                      {room}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Mô tả</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalInputMultiline]}
+                placeholder="VD: Đèn chính"
+                value={editSubtitle}
+                onChangeText={setEditSubtitle}
+                editable={!isEditSaving}
+                multiline
+                numberOfLines={3}
+              />
+
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  isEditSaving && styles.submitButtonDisabled,
+                ]}
+                onPress={saveDeviceInfo}
+                disabled={isEditSaving}
+              >
+                {isEditSaving ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Lưu thay đổi</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Device Confirmation Modal */}
+      <Modal
+        visible={isDeleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsDeleteModalVisible(false)}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <View style={styles.confirmIconWrapper}>
+              <Ionicons name="warning" size={48} color="#FF6B6B" />
+            </View>
+
+            <Text style={styles.confirmModalTitle}>Xóa thiết bị?</Text>
+            <Text style={styles.confirmModalText}>
+              Bạn có chắc chắn muốn xóa "{detail.name}"? Hành động này không thể
+              hoàn tác.
+            </Text>
+
+            <View style={styles.confirmButtonRow}>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmButtonCancel]}
+                onPress={() => setIsDeleteModalVisible(false)}
+                disabled={isDeleting}
+              >
+                <Text style={styles.confirmButtonCancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  styles.confirmButtonDelete,
+                  isDeleting && styles.confirmButtonDeleteDisabled,
+                ]}
+                onPress={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.confirmButtonDeleteText}>Xóa</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -263,6 +518,203 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     color: "#ffffff",
     fontWeight: "700",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  menuButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuDropdown: {
+    position: "absolute",
+    top: 58 + 36 + 8,
+    right: 18,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+    minWidth: 150,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  menuItemDanger: {
+    borderBottomWidth: 0,
+  },
+  menuItemText: {
+    fontSize: 14,
+    color: "#2D5BFF",
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  modalBody: {
+    paddingHorizontal: 0,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4B5563",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    backgroundColor: "#F9FAFB",
+  },
+  modalInputMultiline: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  typeSelector: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 4,
+  },
+  typeChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+  },
+  typeChipActive: {
+    borderColor: "#2D5BFF",
+    backgroundColor: "#EAF0FF",
+  },
+  typeChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  typeChipTextActive: {
+    color: "#2D5BFF",
+  },
+  submitButton: {
+    backgroundColor: "#2D5BFF",
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 30,
+    marginBottom: 16,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
+  submitButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  confirmModalContent: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 24,
+    alignItems: "center",
+  },
+  confirmIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#FFE5E5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 8,
+  },
+  confirmModalText: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  confirmButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmButtonCancel: {
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  confirmButtonCancelText: {
+    color: "#6B7280",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  confirmButtonDelete: {
+    backgroundColor: "#FF6B6B",
+  },
+  confirmButtonDeleteDisabled: {
+    opacity: 0.7,
+  },
+  confirmButtonDeleteText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 14,
   },
   body: {
     paddingHorizontal: 18,

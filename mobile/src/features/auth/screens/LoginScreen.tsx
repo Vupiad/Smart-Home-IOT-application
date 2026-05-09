@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,8 +23,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuthContext();
-  const [email, setEmail] = useState("demo@smarthome.app");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("user@example.com");
+  const [password, setPassword] = useState("password");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -43,21 +53,36 @@ export default function LoginScreen({ navigation }: Props) {
           style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Header Section */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Ionicons name="shield-checkmark" size={32} color={theme.colors.headerBlue} />
+                <Ionicons
+                  name="shield-checkmark"
+                  size={32}
+                  color={theme.colors.headerBlue}
+                />
               </View>
               <Text style={styles.title}>Sign in to your{"\n"}Account</Text>
-              <Text style={styles.subtitle}>Enter your email and password to log in</Text>
+              <Text style={styles.subtitle}>
+                Enter your email and password to log in
+              </Text>
             </View>
 
             {/* Form Card */}
             <View style={styles.card}>
               <TouchableOpacity style={styles.googleButton}>
-                <MaterialCommunityIcons name="google" size={20} color="#DB4437" />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <MaterialCommunityIcons
+                  name="google"
+                  size={20}
+                  color="#DB4437"
+                />
+                <Text style={styles.googleButtonText}>
+                  Continue with Google
+                </Text>
               </TouchableOpacity>
 
               <View style={styles.dividerContainer}>
@@ -100,20 +125,24 @@ export default function LoginScreen({ navigation }: Props) {
               </View>
 
               <View style={styles.optionsRow}>
-                <TouchableOpacity 
-                  style={styles.rememberMenu} 
+                <TouchableOpacity
+                  style={styles.rememberMenu}
                   onPress={() => setRememberMe(!rememberMe)}
                   activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons
-                    name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"}
+                    name={
+                      rememberMe ? "checkbox-marked" : "checkbox-blank-outline"
+                    }
                     size={20}
                     color={rememberMe ? theme.colors.headerBlue : "#6B7280"}
                   />
                   <Text style={styles.rememberText}>Remember me</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <Text style={styles.forgotPasswordText}>Forgot Password ?</Text>
+                  <Text style={styles.forgotPasswordText}>
+                    Forgot Password ?
+                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -303,4 +332,3 @@ const styles = StyleSheet.create({
     color: theme.colors.headerBlue,
   },
 });
-

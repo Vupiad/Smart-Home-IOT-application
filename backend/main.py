@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.v1.endpoints import sensors, auth, devices, modes, device_control, profile, ws
@@ -12,6 +13,16 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
+
+class AllowPrivateNetworkMiddleware(BaseHTTPMiddleware):
+    """Chrome: trang localhost gọi API LAN (192.168.x) cần header này trên preflight."""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        return response
+
 
 from database.sql.database_factory import db_instance
 from database.nosql.nosql_factory import nosql_instance
@@ -40,6 +51,8 @@ app.add_middleware(
     session_cookie="session",
     max_age=24 * 60 * 60
 )
+
+app.add_middleware(AllowPrivateNetworkMiddleware)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])

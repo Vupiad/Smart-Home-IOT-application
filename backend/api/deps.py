@@ -16,15 +16,41 @@ def _get_db_type() -> str:
     """Get configured database type from environment."""
     return os.getenv("DATABASE_TYPE", "postgres")
 
-def get_current_user_id(request: Request) -> int:
-    """Dependency to get the current authenticated user's ID from session."""
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
+
+# auto_error=False allows session cookie auth (e.g. Swagger after login) without Bearer header
+security = HTTPBearer(auto_error=False)
+
+
+async def get_current_user_id(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> int:
+    """Resolve current user from Bearer JWT (mobile / API clients) or session cookie (Swagger / browser)."""
+    secret = os.getenv("JWT_SECRET", "dev-secret-key")
+    if credentials is not None and credentials.credentials:
+        token = credentials.credentials.strip()
+        if token:
+            try:
+                payload = jwt.decode(token, secret, algorithms=["HS256"])
+                sub = payload.get("sub")
+                if sub is not None:
+                    return int(sub)
+            except jwt.PyJWTError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired token",
+                )
+
     user_id = request.session.get("user_id")
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-    return user_id
+    if user_id is not None:
+        return int(user_id)
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+    )
 
 async def get_user_repo(conn = Depends(db_instance.get_connection)):
     """

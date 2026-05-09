@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 from database.models.user import User
 from api.deps import get_user_repo
-from api.security import (
-    hash_password,
-    verify_password
-)
+from api.security import hash_password, verify_password
+import os
+from datetime import datetime, timedelta
+import jwt
 from database.repository import IUserRepository
 from typing import Optional
 
@@ -27,8 +27,9 @@ class LoginRequest(BaseModel):
     password: str
 
 class LoginResponse(BaseModel):
-    """Login response with user info."""
+    """Login response with user info and JWT token."""
     user: UserResponse
+    token: str
     message: str = "Login successful"
 
 class RegisterRequest(BaseModel):
@@ -61,17 +62,25 @@ async def login(
             detail="Invalid email or password"
         )
     
-    # Set session variable
+    # Generate JWT token (valid 24h)
+    token_payload = {
+        "sub": str(user.id),
+        "exp": datetime.utcnow() + timedelta(hours=24),
+    }
+    secret = os.getenv("JWT_SECRET", "dev-secret-key")
+    token = jwt.encode(token_payload, secret, algorithm="HS256")
+    # Set session for backward compatibility (optional)
     request.session["user_id"] = user.id
-    
+
     return LoginResponse(
         user=UserResponse(
             id=user.id,
             email=user.email,
             fullName=user.fullName,
             phone=user.phone,
-            dateOfBirth=user.dateOfBirth
-        )
+            dateOfBirth=user.dateOfBirth,
+        ),
+        token=token,
     )
 
 
@@ -101,16 +110,25 @@ async def register(
     
     created_user = await user_repo.create(user)
     
-    # Set session variable automatically upon register
+    # Create JWT token for the newly registered user (valid 24h)
+    token_payload = {
+        "sub": str(created_user.id),
+        "exp": datetime.utcnow() + timedelta(hours=24),
+    }
+    secret = os.getenv("JWT_SECRET", "dev-secret-key")
+    token = jwt.encode(token_payload, secret, algorithm="HS256")
+    # Set session for backward compatibility (optional)
     request.session["user_id"] = created_user.id
+
     return LoginResponse(
         user=UserResponse(
             id=created_user.id,
             email=created_user.email,
             fullName=created_user.fullName,
             phone=created_user.phone,
-            dateOfBirth=created_user.dateOfBirth
-        )
+            dateOfBirth=created_user.dateOfBirth,
+        ),
+        token=token,
     )
 
 @router.post("/logout")

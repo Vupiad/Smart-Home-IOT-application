@@ -17,13 +17,21 @@ class DeviceService:
         self._device_repo = device_repo
         self._mqtt_service = mqtt_service
         
+    def _mqtt_device_kind(self, device_type: str) -> str:
+        """Map DB device_type → logic kind (pendant/lamp/bulb dùng chung như light)."""
+        t = (device_type or "").lower()
+        if t in ("lamp", "pendant", "light_bulb", "bulb"):
+            return "light"
+        return t
+
     def build_mqtt_cmd(self, device_type: str, state: Dict[str, Any]) -> dict:
         """
         Convert UI state representation to Firmware command.
         """
         cmd_id = f"cmd_{uuid.uuid4().hex[:8]}"
-        
-        if device_type == "light":
+        kind = self._mqtt_device_kind(device_type)
+
+        if kind == "light":
             if "color" in state and state.get("status") == "on":
                 return {
                     "commandId": cmd_id,
@@ -38,7 +46,7 @@ class DeviceService:
             else:
                 return {"commandId": cmd_id, "target": "led", "action": "off"}
 
-        elif device_type == "fan":
+        elif kind == "fan":
             if "speed" in state and state.get("status") == "on":
                 return {
                     "commandId": cmd_id,
@@ -83,7 +91,10 @@ class DeviceService:
         # Build MQTT command
         mqtt_cmd = self.build_mqtt_cmd(device.device_type, state)
         if not mqtt_cmd:
-            raise ValueError(f"Unsupported device type or state format: {device.device_type}")
+            raise ValueError(
+                f"Unsupported device type or state format: {device.device_type} "
+                f"(kind={self._mqtt_device_kind(device.device_type)})"
+            )
         
         # Execute the action (sending as JSON dict)
         success = await self._mqtt_service.publish_to_topic(device_topic, mqtt_cmd)

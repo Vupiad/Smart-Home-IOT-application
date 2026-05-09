@@ -79,6 +79,17 @@ export default function LightControl({
   }, [detail.timerMinutes]);
 
   const lightImageSource = useMemo(() => {
+    if (detail.style === "bulb") {
+      return require("../../../../assets/lightbulb-kitchen.png");
+    }
+    if (detail.style === "pendant") {
+      return require("../../../../assets/pendant-light-living-room.png");
+    }
+    if (detail.style === "lamp") {
+      return require("../../../../assets/lamp-bedroom.png");
+    }
+    
+    // Fallback cho dữ liệu cũ
     if (detail.id.includes("kitchen")) {
       return require("../../../../assets/lightbulb-kitchen.png");
     }
@@ -86,7 +97,7 @@ export default function LightControl({
       return require("../../../../assets/pendant-light-living-room.png");
     }
     return require("../../../../assets/lamp-bedroom.png");
-  }, [detail.id]);
+  }, [detail.id, detail.style]);
 
   const adjustSleepHour = (delta: number) => {
     const rawHour = ((sleepClock.hour - 1 + delta + 12) % 12) + 1;

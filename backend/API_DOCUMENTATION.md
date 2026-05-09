@@ -115,11 +115,26 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
       "device_type": "light",
       "base_topic": "yolohome/device/yolo_uno_01",
       "state": {
+        "room": "Living Room",
+        "subtitle": "Main light",
         "status": "off",
-        "color": { "r": 255, "g": 255, "b": 255 }
+        "color": { "r": 255, "g": 255, "b": 255 },
+        "brightness": 80,
+        "style": "bulb"
       }
     }
     ```
+*   **State fields (all optional):**
+    - `room`: Device location/room name
+    - `subtitle`: Device description
+    - `status`: Current status ("on", "off", "locked", "unlocked", etc.)
+    - `color`: RGB object for lights `{ "r": 0-255, "g": 0-255, "b": 0-255 }`
+    - `brightness`: Light brightness 0-100
+    - `speed`: Fan speed (0-100)
+    - `style`: Light style ("bulb", "pendant", "lamp")
+    - `temperature`: AC temperature setting
+    - `mode`: AC mode ("cool", "heat", "auto", etc.)
+    - Any other device-specific attributes as needed
 
 ### 3.2 List Devices
 *   **GET** `/devices`
@@ -132,7 +147,14 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
         "name": "Living Room Light",
         "device_type": "light",
         "base_topic": "yolohome/device/yolo_uno_01",
-        "state": { "status": "on", "color": {"r": 255, "g": 80, "b": 20} },
+        "state": { 
+          "room": "Living Room",
+          "subtitle": "Main light",
+          "status": "on", 
+          "color": {"r": 255, "g": 80, "b": 20},
+          "brightness": 80,
+          "style": "bulb"
+        },
         "last_online": "2026-04-20T10:35:00"
       }
     ]

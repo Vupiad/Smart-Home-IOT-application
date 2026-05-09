@@ -19,12 +19,15 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:12:16.299783",
       "state": {
-        "status": "off",
+        "status": "on",
         "color": {
-          "r": 255,
-          "g": 0,
-          "b": 0
-        }
+          "r": 246,
+          "g": 193,
+          "b": 38
+        },
+        "brightness": 50,
+        "room": "Bedroom",
+        "subtitle": ""
       },
       "is_online": false,
       "last_seen": null
@@ -38,7 +41,9 @@
       "last_online": "2026-04-25T15:13:46.985323",
       "state": {
         "status": "on",
-        "speed": 100
+        "speed": 33,
+        "room": "Bedroom",
+        "subtitle": ""
       },
       "is_online": false,
       "last_seen": null
@@ -46,12 +51,71 @@
     {
       "id": 3,
       "owner_id": 1,
-      "name": "Living Room Door",
+      "name": "Living Room Front Door",
       "device_type": "door",
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:15:59.424354",
       "state": {
-        "status": "locked"
+        "status": "locked",
+        "room": "Bedroom",
+        "subtitle": ""
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 4,
+      "owner_id": 1,
+      "name": "Pendant Ph\u00f2ng kh\u00e1ch",
+      "device_type": "pendant",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-05-09T20:23:45.192461",
+      "state": {
+        "isOn": false,
+        "room": "Living room",
+        "subtitle": "New device",
+        "status": "on",
+        "brightness": 40,
+        "color": {
+          "r": 102,
+          "g": 102,
+          "b": 102
+        }
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 5,
+      "owner_id": 1,
+      "name": "\u0110\u00e8n ph\u00f2ng ng\u1ee7",
+      "device_type": "lamp",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-05-09T20:28:34.324103",
+      "state": {
+        "status": "off",
+        "brightness": 40,
+        "color": {
+          "r": 102,
+          "g": 102,
+          "b": 102
+        },
+        "room": "Living room",
+        "subtitle": ""
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 6,
+      "owner_id": 1,
+      "name": "AC Living room",
+      "device_type": "AC",
+      "base_topic": "string",
+      "last_online": "2026-05-09T20:32:14.081631",
+      "state": {
+        "room": "Kitchen",
+        "subtitle": ""
       },
       "is_online": false,
       "last_seen": null
@@ -125,7 +189,7 @@
   ],
   "_meta": {
     "next_user_id": 2,
-    "next_device_id": 4,
+    "next_device_id": 8,
     "next_mode_id": 3
   }
 }
