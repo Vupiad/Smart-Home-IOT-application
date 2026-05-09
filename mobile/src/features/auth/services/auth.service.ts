@@ -34,44 +34,74 @@ function sanitizeUser(record: AuthRecord): AuthUser {
   };
 }
 
+const API_URL = "http://localhost:8000/api/v1/auth"; // Đổi thành 10.0.2.2 nếu dùng Android Emulator
+
 export async function login(payload: LoginPayload): Promise<AuthSession> {
-  await wait(200);
+  const response = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    // Lưu ý: Nếu chạy app thật cần bật credentials để nhận và gửi cookie session
+    // credentials: "include", 
+    body: JSON.stringify({
+      email: payload.email.trim(),
+      password: payload.password,
+    }),
+  });
 
-  const record = mockUsers.find(
-    (item) =>
-      item.email.toLowerCase() === payload.email.trim().toLowerCase() &&
-      item.password === payload.password,
-  );
-
-  if (!record) {
-    throw new Error("Invalid email or password");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || "Sai email hoặc mật khẩu");
   }
 
-  return buildSession(sanitizeUser(record));
+  const data = await response.json();
+
+  return {
+    token: "session-cookie-based", // BE dùng Session Cookie nên FE lưu tạm 1 chuỗi để bypass màn Auth
+    user: {
+      id: data.user.id.toString(),
+      email: data.user.email,
+      fullName: data.user.fullName,
+      phone: data.user.phone || "",
+      dateOfBirth: data.user.dateOfBirth || "",
+    },
+  };
 }
 
 export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
-  await wait(240);
+  const response = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    // credentials: "include",
+    body: JSON.stringify({
+      email: payload.email.trim(),
+      password: payload.password,
+      fullName: payload.fullName.trim() || "Người dùng mới",
+      phone: payload.phone?.trim() || "",
+      dateOfBirth: payload.dateOfBirth?.trim() || "",
+    }),
+  });
 
-  const exists = mockUsers.some(
-    (item) => item.email.toLowerCase() === payload.email.trim().toLowerCase(),
-  );
-
-  if (exists) {
-    throw new Error("Email already exists");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || "Email đã tồn tại hoặc lỗi server");
   }
 
-  const record: AuthRecord = {
-    id: `user-${mockUsers.length + 1}`,
-    email: payload.email.trim(),
-    password: payload.password,
-    fullName: payload.fullName.trim() || "New User",
-    phone: payload.phone?.trim() ?? "",
-    dateOfBirth: payload.dateOfBirth?.trim() ?? "",
-  };
+  const data = await response.json();
 
-  mockUsers.push(record);
-  return buildSession(sanitizeUser(record));
+  return {
+    token: "session-cookie-based",
+    user: {
+      id: data.user.id.toString(),
+      email: data.user.email,
+      fullName: data.user.fullName,
+      phone: data.user.phone || "",
+      dateOfBirth: data.user.dateOfBirth || "",
+    },
+  };
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {

@@ -173,8 +173,40 @@ function assertDeviceType<T extends DeviceDetail["type"]>(
 }
 
 export async function getDevices(): Promise<DeviceSummary[]> {
-  await wait(160);
-  return copy(mockDevices);
+  try {
+    // ⚠️ LƯU Ý: Nếu chạy trên máy ảo Android (Emulator), hãy đổi localhost thành 10.0.2.2
+    // Nếu chạy trên điện thoại thật (cùng mạng Wi-Fi), hãy đổi thành IP LAN của máy tính (vd: 192.168.1.x)
+    const API_URL = "http://localhost:8000/api/v1/devices/";
+    
+    const response = await fetch(API_URL, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // credentials: "include" // Bỏ comment dòng này sau khi ghép xong Login API
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Thực hiện map dữ liệu (chuyển đổi) từ cấu trúc Backend sang cấu trúc Frontend mong muốn
+    return data.map((device: any) => ({
+      id: device.id.toString(),             // 1. Ép kiểu id từ int (BE) sang string (FE)
+      name: device.name,
+      type: device.device_type,             // 2. Chuyển đổi tên trường thiết bị cho giống BE
+      isOn: device.state?.isOn || false,    // 3. Đưa isOn từ cục state ra ngoài
+      room: device.state?.room || "Khách",  // 4. Lấy room từ cục state ra ngoài
+      subtitle: device.state?.subtitle || "" // 4. Lấy subtitle từ cục state ra ngoài
+    }));
+
+  } catch (error) {
+    console.error("Failed to fetch devices from BE:", error);
+    // Nếu lỗi (ví dụ chưa bật BE), tạm thời trả về mockData cũ để app không bị crash
+    return copy(mockDevices);
+  }
 }
 
 export async function getDeviceDetail(deviceId: string): Promise<DeviceDetail> {
