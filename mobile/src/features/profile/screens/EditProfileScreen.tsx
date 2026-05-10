@@ -28,7 +28,7 @@ export default function EditProfileScreen() {
     if (!fullName.trim()) return;
     try {
       setSubmitting(true);
-      await updateUser({ userId: user!.id, fullName, phone, dateOfBirth });
+      await updateUser({ fullName, phone, dateOfBirth });
       Alert.alert("Success", "Profile updated successfully");
       navigation.goBack();
     } catch (e: any) {

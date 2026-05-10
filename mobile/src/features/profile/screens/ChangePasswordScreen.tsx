@@ -50,7 +50,6 @@ export default function ChangePasswordScreen() {
     try {
       setSubmitting(true);
       await updateUserPassword({
-        userId: user!.id,
         currentPassword,
         newPassword
       });

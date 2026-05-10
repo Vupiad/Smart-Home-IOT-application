@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
 import { login, signUp, updateProfile, changePassword } from "../services/auth.service";
+import { logout as logoutAPI } from "../../profile/services/profile.service";
 import { AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
 
 type AuthContextValue = {
@@ -11,7 +12,7 @@ type AuthContextValue = {
   signUpAndSignIn: (payload: SignUpPayload) => Promise<void>;
   updateUser: (payload: UpdateProfilePayload) => Promise<void>;
   updateUserPassword: (payload: ChangePasswordPayload) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -39,7 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await changePassword(payload);
     };
 
-    const signOut = () => {
+    const signOut = async () => {
+      try {
+        await logoutAPI();
+      } catch (error) {
+        console.error("Logout API error:", error);
+      }
       setUser(null);
     };
 

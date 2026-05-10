@@ -25,14 +25,12 @@ export type AuthSession = {
 };
 
 export type UpdateProfilePayload = {
-  userId: string;
   fullName: string;
   phone?: string;
   dateOfBirth?: string;
 };
 
 export type ChangePasswordPayload = {
-  userId: string;
   currentPassword: string;
   newPassword: string;
 };
