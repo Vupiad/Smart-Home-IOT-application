@@ -1,7 +1,26 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { login, signUp, updateProfile, changePassword } from "../services/auth.service";
-import { AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
+import {
+  changePassword,
+  getProfile,
+  login,
+  logout,
+  signUp,
+  updateProfile,
+} from "../services/auth.service";
+import {
+  AuthUser,
+  ChangePasswordPayload,
+  LoginPayload,
+  SignUpPayload,
+  UpdateProfilePayload,
+} from "../types";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -11,13 +30,29 @@ type AuthContextValue = {
   signUpAndSignIn: (payload: SignUpPayload) => Promise<void>;
   updateUser: (payload: UpdateProfilePayload) => Promise<void>;
   updateUserPassword: (payload: ChangePasswordPayload) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isHydrating, setIsHydrating] = useState(true);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const profile = await getProfile();
+        setUser(profile);
+      } catch {
+        setUser(null);
+      } finally {
+        setIsHydrating(false);
+      }
+    };
+
+    void hydrate();
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => {
     const signIn = async (payload: LoginPayload) => {
@@ -39,13 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await changePassword(payload);
     };
 
-    const signOut = () => {
+    const signOut = async () => {
+      await logout();
       setUser(null);
     };
 
     return {
       isAuthenticated: Boolean(user),
-      isHydrating: false,
+      isHydrating,
       user,
       signIn,
       signUpAndSignIn,
@@ -53,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateUserPassword,
       signOut,
     };
-  }, [user]);
+  }, [isHydrating, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

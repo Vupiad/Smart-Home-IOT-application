@@ -1,105 +1,64 @@
-import { AuthSession, AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
+import {
+  AuthSession,
+  AuthUser,
+  ChangePasswordPayload,
+  LoginPayload,
+  SignUpPayload,
+  UpdateProfilePayload,
+} from "../types";
+import { apiRequest } from "../../../shared/services/api.client";
 
-type AuthRecord = AuthUser & { password: string };
+type AuthApiResponse = {
+  user: AuthUser;
+  message: string;
+};
 
-const mockUsers: AuthRecord[] = [
-  {
-    id: "user-1",
-    fullName: "Demo User",
-    email: "demo@smarthome.app",
-    password: "123456",
-  },
-];
+type MessageResponse = {
+  message: string;
+};
 
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function buildSession(user: AuthUser): AuthSession {
-  return {
-    token: `token-${user.id}-${Date.now()}`,
-    user,
-  };
-}
-
-function sanitizeUser(record: AuthRecord): AuthUser {
-  return {
-    id: record.id,
-    fullName: record.fullName,
-    email: record.email,
-    phone: record.phone,
-    dateOfBirth: record.dateOfBirth,
-  };
+function toSession(response: AuthApiResponse): AuthSession {
+  return { user: response.user };
 }
 
 export async function login(payload: LoginPayload): Promise<AuthSession> {
-  await wait(200);
-
-  const record = mockUsers.find(
-    (item) =>
-      item.email.toLowerCase() === payload.email.trim().toLowerCase() &&
-      item.password === payload.password,
-  );
-
-  if (!record) {
-    throw new Error("Invalid email or password");
-  }
-
-  return buildSession(sanitizeUser(record));
+  const response = await apiRequest<AuthApiResponse>("/auth/login", {
+    method: "POST",
+    body: payload,
+  });
+  return toSession(response);
 }
 
 export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
-  await wait(240);
-
-  const exists = mockUsers.some(
-    (item) => item.email.toLowerCase() === payload.email.trim().toLowerCase(),
-  );
-
-  if (exists) {
-    throw new Error("Email already exists");
-  }
-
-  const record: AuthRecord = {
-    id: `user-${mockUsers.length + 1}`,
-    email: payload.email.trim(),
-    password: payload.password,
-    fullName: payload.fullName.trim() || "New User",
-    phone: payload.phone?.trim() ?? "",
-    dateOfBirth: payload.dateOfBirth?.trim() ?? "",
-  };
-
-  mockUsers.push(record);
-  return buildSession(sanitizeUser(record));
+  const response = await apiRequest<AuthApiResponse>("/auth/register", {
+    method: "POST",
+    body: payload,
+  });
+  return toSession(response);
 }
 
-export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
-  await wait(240);
-
-  const record = mockUsers.find((item) => item.id === payload.userId);
-  if (!record) {
-    throw new Error("User not found");
-  }
-
-  record.fullName = payload.fullName.trim();
-  if (payload.phone !== undefined) record.phone = payload.phone.trim();
-  if (payload.dateOfBirth !== undefined) record.dateOfBirth = payload.dateOfBirth.trim();
-  
-  return sanitizeUser(record);
+export async function getProfile(): Promise<AuthUser> {
+  return apiRequest<AuthUser>("/profile");
 }
 
-export async function changePassword(payload: ChangePasswordPayload): Promise<void> {
-  await wait(240);
+export async function updateProfile(
+  payload: UpdateProfilePayload,
+): Promise<AuthUser> {
+  return apiRequest<AuthUser>("/profile", {
+    method: "PUT",
+    body: payload,
+  });
+}
 
-  const record = mockUsers.find((item) => item.id === payload.userId);
-  if (!record) {
-    throw new Error("User not found");
-  }
+export async function changePassword(
+  payload: ChangePasswordPayload,
+): Promise<void> {
+  await apiRequest<MessageResponse>("/profile/password", {
+    method: "PUT",
+    body: payload,
+  });
+}
 
-  if (record.password !== payload.currentPassword) {
-    throw new Error("Incorrect current password");
-  }
-
-  record.password = payload.newPassword;
+export async function logout(): Promise<void> {
+  await apiRequest<MessageResponse>("/auth/logout", { method: "POST" });
 }

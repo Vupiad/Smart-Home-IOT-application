@@ -18,7 +18,7 @@ import { theme } from "../../../theme";
 import { useAuthContext } from "../../auth/state/AuthContext";
 
 export default function ChangePasswordScreen() {
-  const { user, updateUserPassword } = useAuthContext();
+  const { updateUserPassword } = useAuthContext();
   const navigation = useNavigation();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -50,7 +50,6 @@ export default function ChangePasswordScreen() {
     try {
       setSubmitting(true);
       await updateUserPassword({
-        userId: user!.id,
         currentPassword,
         newPassword
       });

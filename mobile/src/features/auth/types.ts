@@ -1,5 +1,5 @@
 export type AuthUser = {
-  id: string;
+  id: number;
   email: string;
   fullName: string;
   phone?: string;
@@ -20,19 +20,16 @@ export type SignUpPayload = {
 };
 
 export type AuthSession = {
-  token: string;
   user: AuthUser;
 };
 
 export type UpdateProfilePayload = {
-  userId: string;
   fullName: string;
   phone?: string;
   dateOfBirth?: string;
 };
 
 export type ChangePasswordPayload = {
-  userId: string;
   currentPassword: string;
   newPassword: string;
 };

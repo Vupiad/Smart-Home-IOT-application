@@ -1,9 +1,10 @@
 export type DeviceType = "fan" | "ac" | "light";
+export type DeviceSummaryType = DeviceType | "door";
 
 export interface DeviceSummary {
   id: string;
   name: string;
-  type: DeviceType;
+  type: DeviceSummaryType;
   isOn: boolean;
   room: string;
   icon?: string;

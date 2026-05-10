@@ -1,4 +1,5 @@
 import {
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -52,6 +53,15 @@ function ProfileOption({
 export default function ProfileScreen() {
   const { user, signOut } = useAuthContext();
   const navigation = useNavigation<any>();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Logout failed";
+      Alert.alert("Error", message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -120,7 +130,9 @@ export default function ProfileScreen() {
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={signOut}
+          onPress={() => {
+            void handleSignOut();
+          }}
           activeOpacity={0.8}
         >
           <Ionicons
