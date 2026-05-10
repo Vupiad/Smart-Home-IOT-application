@@ -1,6 +1,15 @@
 """MQTT Service for IoT device communication."""
 
+"""MQTT Service for IoT device communication."""
+
 import paho.mqtt.client as mqtt
+import asyncio
+import json
+import os
+from typing import Any, Callable, Dict, Optional
+from database.nosql.nosql_repository import IRepository
+
+
 import asyncio
 import json
 import os
@@ -29,9 +38,50 @@ class MqttService:
             broker_config: Dict with 'host', 'port', 'user', 'pass'
             repository: Optional sensor data repository for MongoDB storage
         """
+    """
+    MQTT client service for publishing and subscribing to device topics.
+    
+    Handles:
+    - Connection to MQTT broker
+    - Publishing device commands
+    - Subscribing to sensor data
+    - Managing device status updates
+    """
+    
+    _instance: Optional['MqttService'] = None
+    
+    def __init__(self, broker_config: dict, repository: Optional[IRepository] = None):
+        """
+        Initialize MQTT service.
+        
+        Args:
+            broker_config: Dict with 'host', 'port', 'user', 'pass'
+            repository: Optional sensor data repository for MongoDB storage
+        """
         self.config = broker_config
         self.repository = repository
+        self.repository = repository
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self._is_connected = False
+        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
+        
+        # Message handlers for different topics
+        self._message_handlers: Dict[str, Callable] = {}
+        
+    @classmethod
+    def get_instance(cls) -> 'MqttService':
+        """Get singleton instance of MqttService."""
+        if cls._instance is None:
+            # Create default config from environment
+            broker_config = {
+                'host': os.getenv('MQTT_BROKER', 'localhost'),
+                'port': int(os.getenv('MQTT_PORT', '1883')),
+                'user': os.getenv('MQTT_USER'),
+                'pass': os.getenv('MQTT_PASS')
+            }
+            cls._instance = cls(broker_config)
+            cls._instance.setup()
+        return cls._instance
         self._is_connected = False
         self._event_loop: Optional[asyncio.AbstractEventLoop] = None
         
@@ -55,11 +105,13 @@ class MqttService:
         
     def setup(self):
         """Configure MQTT client with callbacks and TLS."""
+        """Configure MQTT client with callbacks and TLS."""
         # Only use TLS if we are connecting to a cloud broker (port 8883)
         if self.config['port'] == 8883:
             self.client.tls_set()
         
         # Only set credentials if they are provided
+        if self.config.get('user') and self.config.get('pass'):
         if self.config.get('user') and self.config.get('pass'):
             self.client.username_pw_set(self.config['user'], self.config['pass'])
             

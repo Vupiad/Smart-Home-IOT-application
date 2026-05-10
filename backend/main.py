@@ -51,6 +51,7 @@ app.include_router(sensors.router, prefix="/api/v1/sensors", tags=["Sensors"])
 app.include_router(ws.router, tags=["WebSocket"])
 
 
+
 @app.get("/")
 def read_root():
     """Health check endpoint."""

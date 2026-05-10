@@ -1,7 +1,11 @@
 """JSON-based Mode Repository implementation."""
 
 from typing import Optional, List
+<<<<<<< HEAD
 from database.models.mode import Mode, ModeDevice
+=======
+from database.models.mode import Mode
+>>>>>>> 6d275bca88a8994ecd2ea931ce271d48b0c39d8d
 from database.repository import IModeRepository
 from .json_connection import JsonConnection
 
