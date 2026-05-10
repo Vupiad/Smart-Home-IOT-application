@@ -28,7 +28,8 @@
         "brightness": 50,
         "room": "Bedroom",
         "subtitle": "",
-        "timerMinutes": 2
+        "timerMinutes": 3,
+        "shutoffTime": "09:20"
       },
       "is_online": false,
       "last_seen": null

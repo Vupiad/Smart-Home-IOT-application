@@ -125,6 +125,7 @@ async def startup_event():
         # Start Scheduler
         from services.scheduler_service import scheduler_service
         scheduler_service.start()
+        await scheduler_service.restore_device_timers()
         
         print(" [STARTUP] All systems initialized")
         print("="*60 + "\n")

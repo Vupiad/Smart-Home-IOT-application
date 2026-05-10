@@ -7,6 +7,7 @@ from datetime import datetime
 from database.models.device import Device
 from api.deps import get_device_repo, get_user_repo, get_current_user_id
 from database.repository import IDeviceRepository, IUserRepository
+from services.timer_service import timer_service
 
 router = APIRouter(tags=["Device Management"])
 
@@ -59,6 +60,23 @@ class DeviceResponse(BaseModel):
     base_topic: str
     state: Dict[str, Any]  # Device state/metadata
     last_online: Optional[str] = None
+
+
+class DeviceTimerRequest(BaseModel):
+    """Request to set or update a device timer.
+    
+    Purpose: Schedule automatic device shutoff at a specific time.
+    Example: {"shutoffTime": "10:00"} turns off device at 10:00 AM
+    """
+    shutoffTime: Optional[str] = None  # Time in HH:MM format (e.g., "10:00", "22:30"), None to remove timer
+
+
+class DeviceTimerResponse(BaseModel):
+    """Response from timer operation."""
+    success: bool
+    message: str
+    device_id: int
+    shutoffTime: Optional[str] = None
 
 
 
@@ -262,3 +280,97 @@ async def delete_device(
         )
     
     return {"message": "Device deleted successfully", "device_id": device_id}
+
+
+# ==================== TIMER ENDPOINTS ====================
+
+@router.post(
+    "/{device_id}/timer",
+    response_model=DeviceTimerResponse,
+    summary="Set or update a device auto-shutoff timer",
+    description=(
+        "Schedule a device to automatically turn off at a specific time. "
+        "Example: Set timer to 10:00 AM means the device will turn off at 10:00 AM that day. "
+        "Use None/null for shutoffTime to cancel the timer."
+    ),
+)
+async def set_device_timer(
+    device_id: int,
+    request: DeviceTimerRequest,
+    user_id: int = Depends(get_current_user_id),
+    device_repo: IDeviceRepository = Depends(get_device_repo)
+) -> DeviceTimerResponse:
+    """Set or cancel a device timer."""
+    # Verify device exists and user owns it
+    device = await device_repo.get_by_id(device_id)
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device not found"
+        )
+    
+    if device.owner_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to set timer for this device"
+        )
+    
+    # Validate time format if provided
+    if request.shutoffTime is not None:
+        try:
+            datetime.strptime(request.shutoffTime, "%H:%M")
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid time format. Use HH:MM format (e.g., '10:00', '22:30')"
+            )
+    
+    # Update device state with timer info
+    device.state["shutoffTime"] = request.shutoffTime
+    updated_device = await device_repo.update(device)
+    
+    # Register timer with timer service
+    timer_service.set_device_timer(device_id, request.shutoffTime)
+    
+    return DeviceTimerResponse(
+        success=True,
+        message=f"Timer {'set' if request.shutoffTime else 'cancelled'} successfully",
+        device_id=device_id,
+        shutoffTime=request.shutoffTime
+    )
+
+
+@router.get(
+    "/{device_id}/timer",
+    response_model=DeviceTimerResponse,
+    summary="Get device timer status",
+    description="Retrieve the current auto-shutoff timer for a device (if any).",
+)
+async def get_device_timer(
+    device_id: int,
+    user_id: int = Depends(get_current_user_id),
+    device_repo: IDeviceRepository = Depends(get_device_repo)
+) -> DeviceTimerResponse:
+    """Get the timer for a device."""
+    # Verify device exists and user owns it
+    device = await device_repo.get_by_id(device_id)
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device not found"
+        )
+    
+    if device.owner_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this device"
+        )
+    
+    shutoff_time = device.state.get("shutoffTime")
+    
+    return DeviceTimerResponse(
+        success=True,
+        message="Timer retrieved successfully",
+        device_id=device_id,
+        shutoffTime=shutoff_time
+    )

@@ -1,4 +1,4 @@
-"""Background scheduler service for executing modes based on time."""
+"""Background scheduler service for executing modes based on time and checking device timers."""
 
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -12,6 +12,7 @@ from database.sql.repositories.postgres_device_repository import PostgresDeviceR
 from services.mode_service import ModeService
 from services.device_service import DeviceService
 from services.mqtt_service import MqttService
+from services.timer_service import timer_service
 
 
 class SchedulerService:
@@ -44,16 +45,39 @@ class SchedulerService:
         
         return mode_service, conn_generator, conn
 
+    async def restore_device_timers(self):
+        """Reload persisted device timers from the database into memory."""
+        mode_service, conn_gen, conn = await self._get_services()
+        try:
+            all_devices = await mode_service._device_repo.list_all()
+            timer_service.load_timers_from_devices(all_devices)
+            print(f" [SCHEDULER] Restored {len(timer_service.get_all_timers())} device timers from DB")
+        finally:
+            try:
+                await conn_gen.aclose()
+            except AttributeError:
+                pass
+
     async def check_and_execute_modes(self):
         """
-        Cron job executed every minute to check if any active mode should be triggered.
+        Cron job executed every minute to check if any active mode should be triggered
+        AND to check if any device timers have expired.
         """
         current_time_str = datetime.now().strftime("%H:%M")
         
         try:
             mode_service, conn_gen, conn = await self._get_services()
             try:
-                # Retrieve all modes
+                # 1. Check device timers first
+                await timer_service.check_and_execute_timers(
+                    device_repo=mode_service._device_repo,
+                    device_service=DeviceService(
+                        mode_service._device_repo,
+                        MqttService.get_instance()
+                    )
+                )
+                
+                # 2. Check and execute modes (scene automation)
                 all_modes = await mode_service._mode_repo.list_all()
                 
                 for mode in all_modes:
@@ -69,7 +93,7 @@ class SchedulerService:
                 except AttributeError:
                     pass
         except Exception as e:
-            print(f" [SCHEDULER] Error checking modes: {e}")
+            print(f" [SCHEDULER] Error checking modes/timers: {e}")
 
     def start(self):
         """Starts the background scheduler."""
