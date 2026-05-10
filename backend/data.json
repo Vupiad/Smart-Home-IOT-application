@@ -3,7 +3,7 @@
     {
       "id": 1,
       "email": "user@example.com",
-      "hashed_password": "$pbkdf2-sha256$29000$di5lTCklBCDk/N.b857Tug$az0nwtfWY0WHyMIt2Js0jibv/9G1o7K4mOFiFtNNrHQ",
+      "hashed_password": "$pbkdf2-sha256$29000$CCEE4Lz3fu.9V6o1BsB4Lw$4E3DrmaFz5miDXjVBvRbIoD1XkPMfRBGimX4sEoQmg8",
       "fullName": "pham xuan vu",
       "phone": "0987654321",
       "dateOfBirth": "28/06/2000",
@@ -33,7 +33,12 @@
           "r": 0,
           "g": 0,
           "b": 0
-        }
+        },
+        "brightness": 50,
+        "room": "Bedroom",
+        "subtitle": "",
+        "timerMinutes": 3,
+        "shutoffTime": "09:20"
       },
       "is_online": false,
       "last_seen": null
@@ -46,8 +51,8 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:13:46.985323",
       "state": {
-        "status": "off",
-        "speed": 0
+        "status": "on",
+        "speed": 100
       },
       "is_online": false,
       "last_seen": null
@@ -55,12 +60,12 @@
     {
       "id": 3,
       "owner_id": 1,
-      "name": "Living Room Door",
+      "name": "Living Room Front Door",
       "device_type": "door",
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:15:59.424354",
       "state": {
-        "status": "unlocked"
+        "status": "locked"
       },
       "is_online": false,
       "last_seen": null
@@ -133,7 +138,7 @@
     }
   ],
   "_meta": {
-    "next_user_id": 3,
+    "next_user_id": 2,
     "next_device_id": 4,
     "next_mode_id": 3
   }

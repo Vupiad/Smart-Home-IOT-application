@@ -1,4 +1,5 @@
 import { AuthSession, AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
+import { setStoredToken } from "../../../shared/storage/tokenStorage";
 
 type AuthRecord = AuthUser & { password: string };
 
@@ -17,12 +18,6 @@ function wait(ms: number) {
   });
 }
 
-function buildSession(user: AuthUser): AuthSession {
-  return {
-    token: `token-${user.id}-${Date.now()}`,
-    user,
-  };
-}
 
 function sanitizeUser(record: AuthRecord): AuthUser {
   return {
@@ -34,7 +29,8 @@ function sanitizeUser(record: AuthRecord): AuthUser {
   };
 }
 
-const API_URL = "http://localhost:8000/api/v1/auth"; // Đổi thành 10.0.2.2 nếu dùng Android Emulator
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = `${BASE_URL}/api/v1/auth`;
 
 export async function login(payload: LoginPayload): Promise<AuthSession> {
   const response = await fetch(`${API_URL}/login`, {
@@ -42,8 +38,6 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     headers: {
       "Content-Type": "application/json",
     },
-    // Lưu ý: Nếu chạy app thật cần bật credentials để nhận và gửi cookie session
-    // credentials: "include", 
     body: JSON.stringify({
       email: payload.email.trim(),
       password: payload.password,
@@ -56,9 +50,10 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
   }
 
   const data = await response.json();
+  await setStoredToken(data.token);
 
   return {
-    token: "session-cookie-based", // BE dùng Session Cookie nên FE lưu tạm 1 chuỗi để bypass màn Auth
+    token: data.token,
     user: {
       id: data.user.id.toString(),
       email: data.user.email,
@@ -91,9 +86,10 @@ export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
   }
 
   const data = await response.json();
+  await setStoredToken(data.token);
 
   return {
-    token: "session-cookie-based",
+    token: data.token,
     user: {
       id: data.user.id.toString(),
       email: data.user.email,

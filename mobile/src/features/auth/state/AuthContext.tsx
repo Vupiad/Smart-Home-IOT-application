@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
 import { login, signUp, updateProfile, changePassword, logout } from "../services/auth.service";
+import { clearStoredToken } from "../../../shared/storage/tokenStorage";
 import { AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
 
 type AuthContextValue = {
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error("Logout error", error);
       } finally {
+        void clearStoredToken();
         setUser(null);
       }
     };

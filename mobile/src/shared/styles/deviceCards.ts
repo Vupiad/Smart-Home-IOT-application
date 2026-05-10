@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 import { theme } from "../../theme";
 
@@ -32,11 +32,17 @@ export const sharedCardStyles = StyleSheet.create({
     paddingVertical: sharedCardTokens.cardPaddingVertical,
     paddingHorizontal: sharedCardTokens.cardPaddingHorizontal,
     alignItems: "center",
-    shadowColor: sharedCardTokens.cardShadowColor,
-    shadowOffset: sharedCardTokens.cardShadowOffset,
-    shadowOpacity: sharedCardTokens.cardShadowOpacity,
-    shadowRadius: sharedCardTokens.cardShadowRadius,
-    elevation: sharedCardTokens.cardElevation,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: `0 ${sharedCardTokens.cardShadowOffset.height}px ${sharedCardTokens.cardShadowRadius}px rgba(0,0,0,${sharedCardTokens.cardShadowOpacity})`,
+        }
+      : {
+          shadowColor: sharedCardTokens.cardShadowColor,
+          shadowOffset: sharedCardTokens.cardShadowOffset,
+          shadowOpacity: sharedCardTokens.cardShadowOpacity,
+          shadowRadius: sharedCardTokens.cardShadowRadius,
+          elevation: sharedCardTokens.cardElevation,
+        }),
   },
   cardActive: {
     borderWidth: sharedCardTokens.activeBorderWidth,

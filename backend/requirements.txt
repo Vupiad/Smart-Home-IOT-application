@@ -19,3 +19,6 @@ passlib[bcrypt]==1.7.4
 
 apscheduler
 itsdangerous
+paho-mqtt
+pyjwt
+python-jose[cryptography]

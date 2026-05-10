@@ -11,7 +11,9 @@ class Device(BaseModel):
     last_online: Optional[datetime] = None
     
     # Device state management
-    state: Dict[str, Any] = {}      # Current device state (e.g., {"power": true, "brightness": 75})
+    state: Dict[str, Any] = {}      # Current device state with metadata
+                                     # Can contain: room, subtitle, status, color, brightness,
+                                     # speed, style, temperature, mode, and other device attributes
     is_online: bool = False          # Whether device is currently online
     last_seen: Optional[datetime] = None  # Last time device communicated
     

@@ -1,4 +1,4 @@
-"""REST API endpoints for device control via MQTT."""
+"""REST API endpoints for sending realtime control commands to devices via MQTT."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -9,7 +9,10 @@ from services.device_service import DeviceService
 from services.mqtt_service import MqttService
 from database.repository import IDeviceRepository
 from api.deps import get_device_repo, get_current_user_id
-router = APIRouter(prefix="/api/v1/device-control", tags=["device-control"])
+router = APIRouter(
+    prefix="/api/v1/device-control",
+    tags=["Device Control (MQTT Commands)"],
+)
 
 
 # Response Models
@@ -40,7 +43,11 @@ async def update_device_state(
     device_repo: IDeviceRepository = Depends(get_device_repo),
 ) -> DeviceControlResponse:
     """
-    Execute an action on a device by updating its state.
+    Send a realtime control command to a device.
+
+    This endpoint publishes the requested state to MQTT so the physical
+    device can react immediately. It is meant for on/off, speed, color,
+    and similar control actions.
     """
     try:
         # Get services
