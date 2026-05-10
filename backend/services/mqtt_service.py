@@ -112,7 +112,6 @@ class MqttService:
         
         # Only set credentials if they are provided
         if self.config.get('user') and self.config.get('pass'):
-        if self.config.get('user') and self.config.get('pass'):
             self.client.username_pw_set(self.config['user'], self.config['pass'])
             
         self.client.on_message = self._on_message
