@@ -1,3 +1,6 @@
+// IP local để app kết nối server
+const BACKEND_BASE_URL = "http://192.168.1.5:8000/api/v1";
+
 /**
  * ThingsBoard Cloud Telemetry Service
  *
@@ -424,18 +427,33 @@ export async function fetchDailyTelemetry(
 export async function fetchLatestTelemetry(): Promise<{
   temperature: number | null;
   humidity: number | null;
-  source: "thingsboard" | "hardcoded";
+  source: "backend" | "thingsboard" | "hardcoded";
 }> {
   try {
-    // Tìm device ID trước
+    // --- MỚI: Ưu tiên lấy dữ liệu mới nhất từ Backend API ---
+    try {
+      const response = await fetch(`${BACKEND_BASE_URL}/sensors/current`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          return {
+            temperature: result.data.temperature ?? null,
+            humidity: result.data.humidity ?? null,
+            source: "backend",
+          };
+        }
+      }
+    } catch (backendError) {
+      // Lỗi connection hoặc database chưa có dữ liệu -> tự động bỏ qua để dùng ThingsBoard
+    }
+
+    // --- GIỮ NGUYÊN: Fallback ThingsBoard ---
     const deviceId = await findDeviceId();
     if (!deviceId) {
       return { temperature: null, humidity: null, source: "hardcoded" };
     }
 
-    // Lấy latest telemetry qua REST API
     const url = `${THINGSBOARD_HTTP_HOST}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=temperature,humidity`;
-
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -501,10 +519,44 @@ export async function fetchRealtimeTelemetry(
   limit: number = 20,
 ): Promise<{
   data: RealtimeDataPoint[];
-  source: "thingsboard" | "hardcoded";
+  source: "backend" | "thingsboard" | "hardcoded";
   error?: string;
 }> {
   try {
+    // --- MỚI: Ưu tiên lấy dữ liệu trực tiếp từ Backend API ---
+    console.log("[SensorService] Đang lấy dữ liệu real-time từ Backend...");
+    try {
+      // Dùng topic mới của thiết bị thật (trả về JSON chứa cả temp & humid)
+      const telemetryRes = await fetchBackendSensorHistory("yolohome/device/yolo_uno_01/telemetry", limit);
+
+      if (telemetryRes.history && telemetryRes.history.length > 0) {
+        const backendData: RealtimeDataPoint[] = telemetryRes.history.map((point: any) => {
+          const d = new Date(point.timestamp);
+          return {
+            ts: d.getTime(),
+            time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`,
+            temperature: point.temperature ?? 0,
+            humidity: point.humidity ?? 0,
+          };
+        });
+
+        // Data từ API trả về sắp xếp theo timestamp desc (mới nhất trên cùng)
+        // Đảo ngược lại cho biểu đồ vẽ từ trái sang phải (cũ đến mới)
+        backendData.reverse();
+
+        if (backendData.length > 0) {
+          console.log(`[SensorService] ✓ Lấy dữ liệu JSON thành công! Số lượng: ${backendData.length}`);
+          return {
+            data: backendData,
+            source: "backend",
+          };
+        }
+      }
+    } catch (e) {
+      console.log("[SensorService] Backend chưa có dữ liệu JSON, dùng fallback...");
+    }
+
+    // --- GIỮ NGUYÊN: Fallback cũ qua ThingsBoard ---
     const deviceId = TB_DEVICE_ID || (await findDeviceId());
     if (!deviceId) {
       return {
@@ -579,7 +631,10 @@ export async function fetchRealtimeTelemetry(
       };
     }
 
-    return { data, source: "thingsboard" };
+    return {
+      data,
+      source: "thingsboard",
+    };
   } catch (error) {
     return {
       data: generateHardcodedRealtime(limit),
@@ -588,3 +643,44 @@ export async function fetchRealtimeTelemetry(
     };
   }
 }
+
+
+/**
+ * Lấy lịch sử dữ liệu cảm biến trực tiếp từ FastAPI Backend.
+ * 
+ * @param topic Tên topic cảm biến (ví dụ: "temperature", "humidity", "yolohome/sensor/temp_humid")
+ * @param limit Số lượng bản ghi tối đa cần lấy (mặc định 20)
+ */
+export async function fetchBackendSensorHistory(
+  topic: string,
+  limit: number = 20,
+): Promise<{
+  topic: string;
+  count: number;
+  history: Array<any>;
+}> {
+  // Dùng encodeURIComponent giúp truyền topic chứa ký tự "/" lên server an toàn
+  const url = `${BACKEND_BASE_URL}/sensors/${encodeURIComponent(topic)}/history?limit=${limit}`;
+
+  try {
+    console.log(`[API Sensors] Fetching sensor history from: ${url}`);
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`[API Sensors] Loaded successfully:`, data);
+    return data;
+  } catch (error) {
+    console.warn(`[API Sensors] Failed to fetch from FastAPI Backend:`, error);
+    throw error;
+  }
+}
+

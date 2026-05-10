@@ -13,7 +13,8 @@ async def get_current_telemetry(
     Returns the most recent telemetry readings.
     """
     try:
-        data = await repo.get_latest_telemetry(device_id)
+        # Fetch latest from any device by passing None
+        data = await repo.get_latest_telemetry(None)
         if not data:
             return {"message": "No telemetry data found"}
         return {"data": data}
