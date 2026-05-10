@@ -1,4 +1,5 @@
 import { theme } from "../../theme";
+import { Mode } from "../../features/automation/types";
 
 export type AutomationScene = {
   id: string;
@@ -6,6 +7,7 @@ export type AutomationScene = {
   icon: string;
   iconColor: string;
   isActive: boolean;
+  _modeData?: Mode;
 };
 
 export const AUTOMATION_SCENES: AutomationScene[] = [

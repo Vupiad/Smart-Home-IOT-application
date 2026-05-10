@@ -19,11 +19,11 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:12:16.299783",
       "state": {
-        "status": "off",
+        "status": "on",
         "color": {
-          "r": 0,
-          "g": 0,
-          "b": 0
+          "r": 246,
+          "g": 193,
+          "b": 38
         }
       },
       "is_online": false,
@@ -37,8 +37,8 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:13:46.985323",
       "state": {
-        "status": "off",
-        "speed": 0
+        "status": "on",
+        "speed": 60
       },
       "is_online": false,
       "last_seen": null
@@ -69,19 +69,20 @@
         {
           "id": 1,
           "state": {
-            "status": "on",
+            "status": "off",
             "color": {
               "r": 255,
               "g": 255,
               "b": 255
-            }
+            },
+            "brightness": 68
           }
         },
         {
           "id": 2,
           "state": {
             "status": "on",
-            "speed": 30
+            "speed": "2"
           }
         }
       ],

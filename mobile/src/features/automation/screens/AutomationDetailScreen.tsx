@@ -9,11 +9,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../../theme";
-import {
-  // Hardcode
-  AUTOMATION_AVAILABLE_SCENES,
-} from "../../../shared/constants/automations";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { automationService } from "../services/automation.service";
+import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 
 export type AutomationDeviceState = {
   status: string;
@@ -35,17 +33,57 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
   const { automation: passedAutomation, automationName: passedName } = route.params || {};
 
   const automationName = passedName || passedAutomation?.name || "Get Up";
+  const { reloadScenes, devices: globalDevices } = useSmartHomeContext();
+
+  const normalizeDevices = (items: any[]): AutomationDeviceItem[] => {
+    return items.map((item) => {
+      if (item.type && item.state) return item as AutomationDeviceItem;
+
+      const catalogInfo = globalDevices.find((d) => String(d.id) === String(item.id));
+      const type = item.type || catalogInfo?.type || "light";
+      const icon = item.icon || catalogInfo?.icon || "bulb-outline";
+      const name = item.name || (catalogInfo ? catalogInfo.name : "Unknown Device");
+
+      let state: AutomationDeviceState = { status: item.state?.status?.toLowerCase() || "off" };
+      if (type === "fan") {
+        state = { ...item.state, status: state.status, speed: item.state?.speed || "1" };
+      } else if (type === "ac") {
+        state = { ...item.state, status: state.status, temp: item.state?.temp || 24 };
+      } else if (type === "light") {
+        state = { ...item.state, status: state.status, brightness: item.state?.brightness || 100 };
+      }
+
+      return {
+        ...item,
+        type,
+        icon,
+        name,
+        state,
+      };
+    });
+  };
 
   const [devices] = useState<AutomationDeviceItem[]>(() => {
-    if (passedAutomation?.devices) return passedAutomation.devices;
-
-    // Hardcode
-    const data = AUTOMATION_AVAILABLE_SCENES[automationName as keyof typeof AUTOMATION_AVAILABLE_SCENES];
-
-    return (data || []) as any[];
+    if (passedAutomation?._modeData?.devices) {
+      return normalizeDevices(passedAutomation._modeData.devices);
+    }
+    return [];
   });
 
   const [isActive, setIsActive] = useState(passedAutomation?.isActive ?? true);
+
+  const handleToggle = async (value: boolean) => {
+    setIsActive(value);
+    if (passedAutomation?._modeData?.id) {
+      try {
+        await automationService.toggleMode(passedAutomation._modeData.id, value);
+        await reloadScenes();
+      } catch (error) {
+        console.error("Failed to toggle automation:", error);
+        setIsActive(!value);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,7 +111,7 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
             <Text style={styles.switchLabel}>Enable Automation</Text>
             <Switch
               value={isActive}
-              onValueChange={setIsActive}
+              onValueChange={handleToggle}
               trackColor={{ false: theme.colors.grayMedium, true: theme.colors.headerBlue }}
             />
           </View>
@@ -85,13 +123,12 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
             <View style={styles.scheduleItem}>
               <Text style={styles.scheduleLabel}>FROM</Text>
               {/* Hardcode */}
-              <Text style={styles.scheduleTime}>{passedAutomation?.startTime || "08:00"}</Text>
+              <Text style={styles.scheduleTime}>{passedAutomation?._modeData?.startTime || "08:00"}</Text>
             </View>
             <View style={styles.scheduleDivider} />
             <View style={styles.scheduleItem}>
               <Text style={styles.scheduleLabel}>TO</Text>
-              {/* Hardcode */}
-              <Text style={styles.scheduleTime}>{passedAutomation?.endTime || "22:00"}</Text>
+              <Text style={styles.scheduleTime}>{passedAutomation?._modeData?.endTime || "22:00"}</Text>
             </View>
           </View>
         </View>
@@ -101,9 +138,9 @@ export default function AutomationDetailScreen({ navigation, route }: any) {
             style={styles.editButton}
             onPress={() => {
               const currentAutomationData = {
-                ...passedAutomation,
+                ...passedAutomation?._modeData,
                 name: automationName,
-                devices: devices,
+                devices: passedAutomation?._modeData?.devices || devices,
                 isActive: isActive,
               };
 

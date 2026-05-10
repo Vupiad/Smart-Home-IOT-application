@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import type { ControlStackParamList } from "../../../navigation/TabNavigator";
-import { DEVICE_CATALOG } from "../../../shared/constants/devices";
+
 import ACControl from "../components/ACControl";
 import FanControl from "../components/FanControl";
 import LightControl from "../components/LightControl";
@@ -44,7 +44,6 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
   const [detail, setDetail] = useState<DeviceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const catalogDevice = DEVICE_CATALOG.find((device) => device.id === deviceId);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -109,7 +108,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const displayTitle = catalogDevice?.name ?? title;
+  const displayTitle = title;
 
   return (
     <View style={styles.container}>

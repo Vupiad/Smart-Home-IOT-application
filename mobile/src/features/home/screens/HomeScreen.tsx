@@ -12,15 +12,15 @@ import Header from "../../../shared/components/Header";
 import SceneModeCard from "../../../shared/components/SceneModeCard";
 import DeviceCard from "../../../shared/components/DeviceCard";
 import DailyEnvironmentChart from "../../../shared/components/DailyEnvironmentChart";
-import { HOME_QUICK_ACCESS_IDS, HOME_SCENE_IDS } from "../../../shared/constants/devices";
+import { HOME_SCENE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 import { ControlStackParamList } from "../../../navigation/TabNavigator";
-import { DeviceType } from "../../control/types";
+
 import { theme } from "../../../theme";
 
 const HomeScreen: React.FC = () => {
   const {
-    selectDevicesByIds,
+    devices,
     selectScenesByIds,
     setDevicePower,
     setSceneActive,
@@ -28,7 +28,7 @@ const HomeScreen: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
-  const quickAccessDevices = selectDevicesByIds(HOME_QUICK_ACCESS_IDS);
+  const quickAccessDevices = devices.slice(0, 2);
   const homeScenes = selectScenesByIds(HOME_SCENE_IDS);
 
   const handleOpenControl = () => {
@@ -36,14 +36,14 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleOpenDeviceDetail = (device: (typeof quickAccessDevices)[number]) => {
-    navigation.getParent()?.navigate("ControlTab" as never, {
+    (navigation.getParent()?.navigate as any)("ControlTab", {
       screen: "DeviceDetail",
       params: {
         deviceId: device.id,
-        deviceType: device.type as DeviceType,
+        deviceType: device.type,
         title: device.name,
       },
-    } as never);
+    });
   };
 
   return (

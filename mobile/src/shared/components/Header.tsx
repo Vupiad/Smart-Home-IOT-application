@@ -4,7 +4,7 @@ import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import styles, { headerIconTokens } from "./Header.styles";
-import { fetchLatestTelemetry } from "../services/thingsboard.service";
+import { useSmartHomeContext } from "../../shared/state/SmartHomeContext";
 
 type HeaderProps = {
   tabName: string;
@@ -34,6 +34,8 @@ export default function Header({
   const [currentHumidity, setCurrentHumidity] = useState<string>("70.0%"); // Default fallback
   const [currentDate, setCurrentDate] = useState<string>("");
 
+  const { telemetry } = useSmartHomeContext();
+
   useEffect(() => {
     // Set formatted current date: "Wed, May 24th"
     const updateDate = () => {
@@ -54,36 +56,23 @@ export default function Header({
     };
     updateDate();
 
-    // Fetch real-time data
-    const loadTelemetry = async () => {
-      try {
-        const { temperature, humidity } = await fetchLatestTelemetry();
-        if (temperature !== null) {
-          setCurrentTemp(`${temperature.toFixed(1)}°C`);
-        } else {
-          // Hardcoded fallback logic
-          setCurrentTemp(`${(25 + Math.random() * 10).toFixed(1)}°C`);
-        }
-        
-        if (humidity !== null) {
-          setCurrentHumidity(`${humidity.toFixed(1)}%`);
-        } else {
-          // Hardcoded fallback logic
-          setCurrentHumidity(`${(55 + Math.random() * 30).toFixed(1)}%`);
-        }
-      } catch (error) {
-        console.warn("Failed to fetch header telemetry", error);
-      }
-    };
-
-    loadTelemetry();
     const interval = setInterval(() => {
-      loadTelemetry();
       updateDate();
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (telemetry) {
+      if (telemetry.temperature !== undefined) {
+        setCurrentTemp(`${telemetry.temperature.toFixed(1)}°C`);
+      }
+      if (telemetry.humidity !== undefined) {
+        setCurrentHumidity(`${telemetry.humidity.toFixed(1)}%`);
+      }
+    }
+  }, [telemetry]);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>

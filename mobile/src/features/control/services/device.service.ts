@@ -4,7 +4,6 @@ import {
   DeviceDetail,
   DeviceSummary,
   DeviceSummaryType,
-  DeviceType,
   FanDeviceUpdatePayload,
   LightDeviceUpdatePayload,
   ToggleDevicePowerPayload,

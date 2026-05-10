@@ -12,12 +12,11 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../../theme";
-// Hardcode
-import { 
-  DEVICE_CATALOG, 
-  DeviceCatalogItem 
-} from "../../../shared/constants/devices";
+import { DeviceCatalogItem } from "../../../shared/constants/devices";
+import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { automationService } from "../services/automation.service";
+import { CreateModeDto, ModeDevice } from "../types";
 
 export type AutomationDeviceState = {
   status: string;
@@ -52,6 +51,7 @@ export type Automation = {
 export default function AddAutomationScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { reloadScenes, devices: globalDevices } = useSmartHomeContext();
 
   const { isEdit, automation } = route.params || {};
 
@@ -63,7 +63,7 @@ export default function AddAutomationScreen() {
       if (item.type && item.state) return item as AutomationDeviceItem;
 
       // Otherwise, try to find it in the catalog to get the correct type
-      const catalogInfo = DEVICE_CATALOG.find((d) => d.id === item.id);
+      const catalogInfo = globalDevices.find((d) => String(d.id) === String(item.id));
       const type = item.type || catalogInfo?.type || "light";
       const icon = item.icon || catalogInfo?.icon || "bulb-outline";
 
@@ -216,24 +216,36 @@ export default function AddAutomationScreen() {
     </View>
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       setErrorVisible(true);
       return;
     }
 
-    const finalData = {
-      ...automation,
+    const mappedDevices: ModeDevice[] = devices.map((d) => ({
+      id: d.id,
+      state: d.state,
+    })) as ModeDevice[];
+
+    const finalData: CreateModeDto = {
       name,
       isActive,
       startTime: formatTime(startTime),
       endTime: formatTime(endTime),
-      devices,
+      devices: mappedDevices,
     };
 
-    // Hardcode
-    console.log("Saving Automation:", JSON.stringify(finalData, null, 2));
-    navigation.goBack();
+    try {
+      if (isEdit && automation?.id) {
+        await automationService.updateMode(automation.id, finalData);
+      } else {
+        await automationService.createMode(finalData);
+      }
+      await reloadScenes();
+      navigation.goBack();
+    } catch (error) {
+      console.error("Failed to save automation:", error);
+    }
   };
 
   const handleSaveDeviceSettings = () => {
@@ -322,8 +334,8 @@ export default function AddAutomationScreen() {
     setDeleteConfirmVisible(true);
   };
 
-  const availableDevicesToAdd = DEVICE_CATALOG.filter(
-    (catalogDevice) => !devices.some((d) => d.id === catalogDevice.id)
+  const availableDevicesToAdd = globalDevices.filter(
+    (catalogDevice) => !devices.some((d) => String(d.id) === String(catalogDevice.id))
   );
 
   return (
@@ -751,9 +763,17 @@ export default function AddAutomationScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.saveModalBtn, { backgroundColor: "#FF3B30" }]}
-                onPress={() => {
+                onPress={async () => {
                   setDeleteConfirmVisible(false);
-                  navigation.goBack();
+                  if (automation?.id) {
+                    try {
+                      await automationService.deleteMode(automation.id);
+                      await reloadScenes();
+                    } catch (error) {
+                      console.error("Failed to delete automation:", error);
+                    }
+                  }
+                  navigation.getParent()?.navigate("Automation");
                 }}
               >
                 <Text style={styles.saveModalText}>Delete</Text>

@@ -13,7 +13,6 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Header from "../../../shared/components/Header";
 import DeviceCard from "../../../shared/components/DeviceCard";
-import { CONTROL_DEVICE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 import { ControlStackParamList } from "../../../navigation/TabNavigator";
 import { DeviceType } from "../types";
@@ -24,11 +23,9 @@ type DeviceFilter = "all" | "fan" | "ac" | "light" | "door";
 const ControlScreen: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [activeFilter, setActiveFilter] = useState<DeviceFilter>("all");
-  const { selectDevicesByIds, setDevicePower } = useSmartHomeContext();
+  const { devices, setDevicePower } = useSmartHomeContext();
   const navigation =
     useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
-
-  const devices = selectDevicesByIds(CONTROL_DEVICE_IDS);
 
   const normalizedRoomSearch = searchText.trim().toLowerCase();
 

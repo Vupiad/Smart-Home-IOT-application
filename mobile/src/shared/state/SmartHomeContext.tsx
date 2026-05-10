@@ -1,38 +1,122 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
-  DEVICE_CATALOG,
   DeviceCatalogItem,
 } from "../constants/devices";
 import {
-  AUTOMATION_SCENES,
   AutomationScene,
 } from "../constants/automations";
+import { automationService } from "../../features/automation/services/automation.service";
+import { Mode } from "../../features/automation/types";
+import { theme } from "../../theme";
+import { getDevices, toggleDevicePower } from "../../features/control/services/device.service";
+import { wsService } from "../services/websocket.service";
+
+export type TelemetryData = {
+  temperature: number;
+  humidity: number;
+  light: number;
+  timestamp: string;
+};
+
+// Helper to map backend Mode to UI AutomationScene
+function mapModeToScene(mode: Mode): AutomationScene {
+  const iconMap: Record<string, { icon: string; color: string }> = {
+    "Good Morning": { icon: "sunny", color: theme.colors.weatherIcon },
+    "Get Up": { icon: "sunny", color: theme.colors.weatherIcon },
+    "Goodnight": { icon: "moon", color: "#4A6FA5" },
+    "Sleep": { icon: "moon", color: "#4A6FA5" },
+    "Go out": { icon: "partly-sunny", color: "#FFD700" },
+    "Leave Home": { icon: "log-out-outline", color: "#FFD700" },
+    "Hot weather": { icon: "thermometer-outline", color: theme.colors.dateIcon },
+  };
+
+  const defaultIcon = { icon: "color-wand-outline", color: theme.colors.headerBlue };
+  const mapped = iconMap[mode.name] || defaultIcon;
+
+  return {
+    id: String(mode.id),
+    name: mode.name,
+    icon: mapped.icon,
+    iconColor: mapped.color,
+    isActive: mode.isActive,
+    // Store original mode data for details if needed
+    _modeData: mode,
+  };
+}
 
 type SmartHomeContextValue = {
   devices: DeviceCatalogItem[];
   scenes: AutomationScene[];
+  telemetry: TelemetryData | null;
   selectDevicesByIds: (ids: string[]) => DeviceCatalogItem[];
   selectScenesByIds: (ids: string[]) => AutomationScene[];
-  setDevicePower: (deviceId: string, isOn: boolean) => void;
-  setSceneActive: (sceneId: string, isActive: boolean) => void;
+  setDevicePower: (deviceId: string, isOn: boolean) => Promise<void>;
+  setSceneActive: (sceneId: string, isActive: boolean) => Promise<void>;
+  reloadScenes: () => Promise<void>;
+  reloadDevices: () => Promise<void>;
 };
-
+     
 const SmartHomeContext = createContext<SmartHomeContextValue | undefined>(
   undefined,
 );
 
-function cloneArray<T>(items: T[]): T[] {
-  return items.map((item) => ({ ...item }));
-}
-
 export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
-  const [devices, setDevices] = useState<DeviceCatalogItem[]>(() =>
-    cloneArray(DEVICE_CATALOG),
-  );
-  const [scenes, setScenes] = useState<AutomationScene[]>(() =>
-    cloneArray(AUTOMATION_SCENES),
-  );
+  const [devices, setDevices] = useState<DeviceCatalogItem[]>([]);
+  const [scenes, setScenes] = useState<AutomationScene[]>([]);
+  const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
+
+  const loadDevices = async () => {
+    try {
+      const apiDevices = await getDevices();
+      setDevices(apiDevices as DeviceCatalogItem[]);
+    } catch (error) {
+      console.error("Failed to load devices:", error);
+    }
+  };
+
+  const loadScenes = async () => {
+    try {
+      const modes = await automationService.getModes();
+      setScenes(modes.map(mapModeToScene));
+    } catch (error) {
+      console.error("Failed to load scenes:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadDevices();
+    loadScenes();
+
+    wsService.connect();
+    const unsubscribe = wsService.subscribe((event) => {
+      if (event.type === "telemetry_update") {
+        setTelemetry(event.data);
+      } else if (event.type === "device_update") {
+        setDevices((prev) =>
+          prev.map((device) => {
+            if (String(device.id) === String(event.device_id)) {
+              // Extract isOn from status if present
+              const isOn = event.state.status 
+                ? (event.state.status === "on" || event.state.status === "locked")
+                : device.isOn;
+              
+              // This is a simplified update. For full accuracy, we'd want to 
+              // re-run the normalizer from device.service, but for now we just
+              // update the isOn status.
+              return { ...device, isOn };
+            }
+            return device;
+          })
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      wsService.disconnect();
+    };
+  }, []);
 
   const value = useMemo<SmartHomeContextValue>(() => {
     const selectDevicesByIds = (ids: string[]) => {
@@ -49,29 +133,60 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
         .filter((scene): scene is AutomationScene => Boolean(scene));
     };
 
-    const setDevicePower = (deviceId: string, isOn: boolean) => {
+    const setDevicePowerState = async (deviceId: string, isOn: boolean) => {
+      // Optimistic update
       setDevices((prev) =>
         prev.map((device) =>
           device.id === deviceId ? { ...device, isOn } : device,
         ),
       );
+
+      try {
+        await toggleDevicePower(deviceId, isOn);
+      } catch (error) {
+        console.error("Failed to toggle device power:", error);
+        // Revert on error
+        setDevices((prev) =>
+          prev.map((device) =>
+            device.id === deviceId ? { ...device, isOn: !isOn } : device,
+          ),
+        );
+      }
     };
 
-    const setSceneActive = (sceneId: string, isActive: boolean) => {
+    const setSceneActive = async (sceneId: string, isActive: boolean) => {
+      // Optimistic update
       setScenes((prev) =>
         prev.map((scene) =>
           scene.id === sceneId ? { ...scene, isActive } : scene,
         ),
       );
+
+      try {
+        await automationService.toggleMode(sceneId, isActive);
+        // We could also reload scenes here to get the real state, 
+        // but optimistic update is usually fine for a toggle
+      } catch (error) {
+        console.error("Failed to toggle scene:", error);
+        // Revert on error
+        setScenes((prev) =>
+          prev.map((scene) =>
+            scene.id === sceneId ? { ...scene, isActive: !isActive } : scene,
+          ),
+        );
+      }
     };
 
     return {
       devices,
       scenes,
+      telemetry,
       selectDevicesByIds,
       selectScenesByIds,
-      setDevicePower,
+      setDevicePower: setDevicePowerState,
       setSceneActive,
+      reloadScenes: loadScenes,
+      reloadDevices: loadDevices,
     };
   }, [devices, scenes]);
 

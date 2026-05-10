@@ -23,7 +23,8 @@ import { theme } from "../../theme";
 import {
   fetchRealtimeTelemetry,
   type RealtimeDataPoint,
-} from "../services/thingsboard.service";
+} from "../services/sensor.service";
+import { useSmartHomeContext } from "../../shared/state/SmartHomeContext";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -38,7 +39,6 @@ const PADDING = { top: 15, right: 15, bottom: 30, left: 40 };
 const PLOT_WIDTH = CHART_WIDTH - PADDING.left - PADDING.right;
 const PLOT_HEIGHT = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
-const REFRESH_INTERVAL = 60000; // ms (1 minute)
 const DATA_POINTS = 20;
 
 // Colors
@@ -277,11 +277,13 @@ function BarChartView({ data }: { data: RealtimeDataPoint[] }) {
 export default function RealtimeEnvironmentChart() {
   const [data, setData] = useState<RealtimeDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dataSource, setDataSource] = useState<"thingsboard" | "hardcoded">(
+  const [dataSource, setDataSource] = useState<"api" | "hardcoded" | "thingsboard">(
     "hardcoded",
   );
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const { telemetry } = useSmartHomeContext();
 
   // Pulse animation for live indicator
   useEffect(() => {
@@ -319,12 +321,34 @@ export default function RealtimeEnvironmentChart() {
     }
   }, []);
 
-  // Initial load + auto-refresh
+  // Initial load
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
   }, [loadData]);
+
+  // Update when we receive new websocket telemetry
+  useEffect(() => {
+    if (telemetry) {
+      setData((prev) => {
+        const d = new Date(telemetry.timestamp);
+        const newPoint: RealtimeDataPoint = {
+          ts: d.getTime(),
+          time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`,
+          temperature: telemetry.temperature,
+          humidity: telemetry.humidity,
+        };
+        const newData = [...prev, newPoint];
+        if (newData.length > DATA_POINTS) {
+          newData.shift();
+        }
+        return newData;
+      });
+      const now = new Date();
+      setLastUpdated(
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`,
+      );
+    }
+  }, [telemetry]);
 
   // Derived values
   const latest = data.length > 0 ? data[data.length - 1] : null;
@@ -391,7 +415,7 @@ export default function RealtimeEnvironmentChart() {
             <Animated.View
               style={[
                 styles.liveDot,
-                dataSource === "thingsboard"
+                dataSource === "api" || dataSource === "thingsboard"
                   ? styles.liveDotGreen
                   : styles.liveDotYellow,
                 { opacity: pulseAnim },
@@ -400,12 +424,12 @@ export default function RealtimeEnvironmentChart() {
             <Text
               style={[
                 styles.statusText,
-                dataSource === "thingsboard"
+                dataSource === "api" || dataSource === "thingsboard"
                   ? styles.statusTextLive
                   : styles.statusTextOffline,
               ]}
             >
-              {dataSource === "thingsboard" ? "LIVE" : "OFFLINE"}
+              {dataSource === "api" || dataSource === "thingsboard" ? "LIVE" : "OFFLINE"}
             </Text>
           </View>
           <View style={styles.statusRight}>

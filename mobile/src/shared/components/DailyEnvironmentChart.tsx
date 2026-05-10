@@ -12,7 +12,7 @@ import { theme } from "../../theme";
 import {
   fetchDailyTelemetry,
   type FetchResult,
-} from "../services/thingsboard.service";
+} from "../services/sensor.service";
 
 const DEFAULT_MAX_TEMP_SCALE = 40;
 const DEFAULT_MAX_HUMIDITY_SCALE = 100;
@@ -60,7 +60,7 @@ export default function DailyEnvironmentChart({
     propData ?? DAILY_ENVIRONMENT_MOCK_DATA,
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [dataSource, setDataSource] = useState<"thingsboard" | "hardcoded">(
+  const [dataSource, setDataSource] = useState<"api" | "hardcoded" | "thingsboard">(
     "hardcoded",
   );
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
@@ -140,7 +140,7 @@ export default function DailyEnvironmentChart({
           <View
             style={[
               styles.sourceBadge,
-              dataSource === "thingsboard"
+              dataSource === "api" || dataSource === "thingsboard"
                 ? styles.sourceBadgeLive
                 : styles.sourceBadgeOffline,
             ]}
@@ -148,7 +148,7 @@ export default function DailyEnvironmentChart({
             <View
               style={[
                 styles.sourceDot,
-                dataSource === "thingsboard"
+                dataSource === "api" || dataSource === "thingsboard"
                   ? styles.sourceDotLive
                   : styles.sourceDotOffline,
               ]}
@@ -156,13 +156,13 @@ export default function DailyEnvironmentChart({
             <Text
               style={[
                 styles.sourceBadgeText,
-                dataSource === "thingsboard"
+                dataSource === "api" || dataSource === "thingsboard"
                   ? styles.sourceBadgeTextLive
                   : styles.sourceBadgeTextOffline,
               ]}
             >
-              {dataSource === "thingsboard"
-                ? "Live – ThingsBoard"
+              {dataSource === "api" || dataSource === "thingsboard"
+                ? "Live – Smart Home API"
                 : "Offline – Hardcoded"}
             </Text>
           </View>
@@ -173,7 +173,7 @@ export default function DailyEnvironmentChart({
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="small" color="#2E4EE8" />
             <Text style={styles.loadingText}>
-              Đang lấy dữ liệu từ ThingsBoard...
+              Đang lấy dữ liệu từ Backend...
             </Text>
           </View>
         )}
@@ -229,8 +229,8 @@ export default function DailyEnvironmentChart({
             {footnoteText ??
               (errorMessage
                 ? `⚠ ${errorMessage}`
-                : dataSource === "thingsboard"
-                  ? "✓ Dữ liệu thực từ ThingsBoard Cloud"
+                : dataSource === "api" || dataSource === "thingsboard"
+                  ? "✓ Dữ liệu thực từ Backend API"
                   : "Đang sử dụng dữ liệu mẫu (hardcoded)")}
           </Text>
         )}
