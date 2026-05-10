@@ -75,7 +75,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
     headers: {
       "Content-Type": "application/json",
     },
-    // credentials: "include",
+    credentials: "include",
     body: JSON.stringify({
       email: payload.email.trim(),
       password: payload.password,
@@ -102,6 +102,17 @@ export async function signUp(payload: SignUpPayload): Promise<AuthSession> {
       dateOfBirth: data.user.dateOfBirth || "",
     },
   };
+}
+
+export async function logout(): Promise<void> {
+  const response = await fetch(`${API_URL}/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    console.warn("Logout failed on backend");
+  }
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
