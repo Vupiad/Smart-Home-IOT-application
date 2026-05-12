@@ -25,7 +25,7 @@ export async function fetchDailyTelemetry(days: number = 7): Promise<FetchResult
   try {
     // Fetch last 100 points, hopefully spanning enough time for some variation
     const response = await apiRequest<{ topic: string; count: number; history: any[] }>(
-      `/sensors/${DEFAULT_TOPIC}/history?limit=100`
+      `/sensors/${DEFAULT_TOPIC}/history?limit=1000`
     );
 
     const history = response.history || [];

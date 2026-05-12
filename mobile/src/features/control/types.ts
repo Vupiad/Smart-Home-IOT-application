@@ -1,5 +1,5 @@
-export type DeviceType = "fan" | "ac" | "light";
-export type DeviceSummaryType = DeviceType | "door";
+export type DeviceType = "fan" | "ac" | "light" | "door";
+export type DeviceSummaryType = DeviceType;
 
 export interface DeviceSummary {
   id: string;
@@ -43,7 +43,12 @@ export interface LightDeviceDetail extends BaseDeviceDetail {
   timerMinutes: number;
 }
 
-export type DeviceDetail = FanDeviceDetail | ACDeviceDetail | LightDeviceDetail;
+export interface DoorDeviceDetail extends BaseDeviceDetail {
+  type: "door";
+  status: "locked" | "unlocked";
+}
+
+export type DeviceDetail = FanDeviceDetail | ACDeviceDetail | LightDeviceDetail | DoorDeviceDetail;
 
 export type ToggleDevicePowerPayload = {
   isOn: boolean;
@@ -67,8 +72,13 @@ export type LightDeviceUpdatePayload = {
   timerMinutes?: number;
 };
 
+export type DoorDeviceUpdatePayload = {
+  status?: "locked" | "unlocked";
+};
+
 export type DeviceUpdatePayload =
   | ToggleDevicePowerPayload
   | FanDeviceUpdatePayload
   | ACDeviceUpdatePayload
-  | LightDeviceUpdatePayload;
+  | LightDeviceUpdatePayload
+  | DoorDeviceUpdatePayload;

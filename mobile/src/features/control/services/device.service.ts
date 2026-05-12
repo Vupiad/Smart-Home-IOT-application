@@ -4,6 +4,7 @@ import {
   DeviceDetail,
   DeviceSummary,
   DeviceSummaryType,
+  DoorDeviceUpdatePayload,
   FanDeviceUpdatePayload,
   LightDeviceUpdatePayload,
   ToggleDevicePowerPayload,
@@ -208,6 +209,18 @@ function toDeviceDetail(device: ApiDevice): DeviceDetail {
     };
   }
 
+  if (type === "door") {
+    const status = String(state.status ?? "locked").toLowerCase() as "locked" | "unlocked";
+    return {
+      id: String(device.id),
+      name: device.name,
+      type: "door",
+      isOn: status === "unlocked",
+      online: true,
+      status: status === "locked" ? "locked" : "unlocked",
+    };
+  }
+
   return {
     id: String(device.id),
     name: device.name,
@@ -237,10 +250,6 @@ export async function getDevices(): Promise<DeviceSummary[]> {
 
 export async function getDeviceDetail(deviceId: string): Promise<DeviceDetail> {
   const device = await apiRequest<ApiDevice>(`/devices/${parseDeviceId(deviceId)}`);
-  const type = normalizeType(device.device_type);
-  if (type === "door") {
-    throw new Error("Door detail screen is not implemented yet.");
-  }
   return toDeviceDetail(device);
 }
 
@@ -358,4 +367,15 @@ export async function setLightTimer(
     throw new Error("Light timerMinutes is required");
   }
   await updateDeviceState(deviceId, { timerMinutes: Math.max(0, timerMinutes) });
+}
+
+export async function setDoorLockStatus(
+  deviceId: string,
+  payload: DoorDeviceUpdatePayload | "locked" | "unlocked",
+): Promise<void> {
+  const status = typeof payload === "string" ? payload : payload.status;
+  if (!status) {
+    throw new Error("Door status is required");
+  }
+  await updateDeviceState(deviceId, { status });
 }

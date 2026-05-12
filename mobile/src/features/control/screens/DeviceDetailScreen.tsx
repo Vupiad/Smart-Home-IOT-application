@@ -17,6 +17,7 @@ import type { ControlStackParamList } from "../../../navigation/TabNavigator";
 import ACControl from "../components/ACControl";
 import FanControl from "../components/FanControl";
 import LightControl from "../components/LightControl";
+import DoorControl from "../components/DoorControl";
 import {
   getDeviceDetail,
   setACFanSpeed,
@@ -29,10 +30,12 @@ import {
   setLightColor,
   setLightTimer,
   toggleDevicePower,
+  setDoorLockStatus,
 } from "../services/device.service";
 import {
   ACDeviceDetail,
   DeviceDetail,
+  DoorDeviceDetail,
   FanDeviceDetail,
   LightDeviceDetail,
 } from "../types";
@@ -215,6 +218,22 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               };
               void runUpdate(async () => {
                 await setLightTimer(detail.id, safeTimer);
+              }, nextState);
+            }}
+          />
+        )}
+
+        {detail.type === "door" && (
+          <DoorControl
+            detail={detail}
+            onChangeStatus={(status) => {
+              const nextState: DoorDeviceDetail = {
+                ...detail,
+                status,
+                isOn: status === "unlocked",
+              };
+              void runUpdate(async () => {
+                await setDoorLockStatus(detail.id, status);
               }, nextState);
             }}
           />

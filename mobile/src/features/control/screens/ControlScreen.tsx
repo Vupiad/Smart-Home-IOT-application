@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Alert,
   View,
   Text,
   StyleSheet,
@@ -38,11 +37,6 @@ const ControlScreen: React.FC = () => {
   });
 
   const handleOpenDeviceDetail = (device: (typeof filteredDevices)[number]) => {
-    if (device.type === "door") {
-      Alert.alert("Not supported yet", "Door detail screen is not implemented yet.");
-      return;
-    }
-
     navigation.navigate("DeviceDetail", {
       deviceId: device.id,
       deviceType: device.type as DeviceType,
