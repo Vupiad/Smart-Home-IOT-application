@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1.endpoints import sensors, auth, devices, modes, device_control
+from api.v1.endpoints import sensors, auth, devices, modes, device_control, profile
 
 api_router = APIRouter()
 
@@ -17,3 +17,6 @@ api_router.include_router(modes.router, prefix="/modes", tags=["Automation Modes
 
 # Sensor data endpoints
 api_router.include_router(sensors.router, prefix="/sensors", tags=["Sensors"])
+
+# Profile endpoints
+api_router.include_router(profile.router, prefix="/profile", tags=["Profile"])

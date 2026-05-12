@@ -11,6 +11,18 @@ from services.device_service import DeviceService
 from services.mqtt_service import MqttService
 
 
+def _is_within_schedule(current_time: str, start_time: str, end_time: str) -> bool:
+    """
+    Check whether current_time is inside [start_time, end_time], including windows
+    that pass midnight (e.g. 23:00 -> 07:00).
+    """
+    if start_time <= end_time:
+        return start_time <= current_time <= end_time
+
+    # Overnight window
+    return current_time >= start_time or current_time <= end_time
+
+
 class SchedulerService:
     """
     Manages the background execution of modes based on their schedules.
@@ -50,7 +62,7 @@ class SchedulerService:
                 
                 for mode in all_modes:
                     if mode.isActive:
-                        if current_time_str >= mode.startTime and current_time_str <= mode.endTime:
+                        if _is_within_schedule(current_time_str, mode.startTime, mode.endTime):
                             if not mode.is_activated:
                                 print(f" [SCHEDULER] Triggering Mode {mode.id}: {mode.name} at {current_time_str}")
                                 # Execute in background task to prevent blocking the scheduler

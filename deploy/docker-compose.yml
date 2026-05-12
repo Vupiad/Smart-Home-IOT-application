@@ -12,6 +12,18 @@ services:
   #     - "5432:5432"
   #   volumes:
   #     - pgdata:/var/lib/postgresql/data
+  # postgres-db:
+  #   image: postgres:15
+  #   container_name: smarthome-postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: admin
+  #     POSTGRES_PASSWORD: admin_password
+  #     POSTGRES_DB: smarthome_auth
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
 
   
   mongo-db:
@@ -23,7 +35,7 @@ services:
     volumes:
       - mongodata:/var/lib/mongodb/data
   
-  MQTT Broker for local testing (optional, can use HiveMQ Cloud instead)
+  # MQTT Broker for local testing (optional, can use HiveMQ Cloud instead)
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: local-mqtt
