@@ -104,7 +104,7 @@ const HomeScreen: React.FC = () => {
           </View>
 
           <View style={styles.section}>
-            <DailyEnvironmentChart title="Bieu do nhiet do, do am" />
+            <DailyEnvironmentChart title="Temperature & Humidity Chart" />
           </View>
         </View>
       </ScrollView>
