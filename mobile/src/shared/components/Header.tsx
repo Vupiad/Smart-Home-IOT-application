@@ -30,8 +30,8 @@ export default function Header({
   onAddPress,
   rightElement, // 2. Nhận prop
 }: HeaderProps) {
-  const [currentTemp, setCurrentTemp] = useState<string>("28.0°C"); // Default fallback
-  const [currentHumidity, setCurrentHumidity] = useState<string>("70.0%"); // Default fallback
+  const [currentTemp, setCurrentTemp] = useState<string>("--°C");
+  const [currentHumidity, setCurrentHumidity] = useState<string>("--%");
   const [currentDate, setCurrentDate] = useState<string>("");
 
   useEffect(() => {
@@ -40,11 +40,11 @@ export default function Header({
       const now = new Date();
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      
+
       const dayName = days[now.getDay()];
       const monthName = months[now.getMonth()];
       const date = now.getDate();
-      
+
       let suffix = "th";
       if (date === 1 || date === 21 || date === 31) suffix = "st";
       else if (date === 2 || date === 22) suffix = "nd";
@@ -61,15 +61,13 @@ export default function Header({
         if (temperature !== null) {
           setCurrentTemp(`${temperature.toFixed(1)}°C`);
         } else {
-          // Hardcoded fallback logic
-          setCurrentTemp(`${(25 + Math.random() * 10).toFixed(1)}°C`);
+          setCurrentTemp("--°C");
         }
-        
+
         if (humidity !== null) {
           setCurrentHumidity(`${humidity.toFixed(1)}%`);
         } else {
-          // Hardcoded fallback logic
-          setCurrentHumidity(`${(55 + Math.random() * 30).toFixed(1)}%`);
+          setCurrentHumidity("--%");
         }
       } catch (error) {
         console.warn("Failed to fetch header telemetry", error);
@@ -80,7 +78,7 @@ export default function Header({
     const interval = setInterval(() => {
       loadTelemetry();
       updateDate();
-    }, 60000); // Check every minute
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);

@@ -1,5 +1,5 @@
-// IP local để app kết nối server
-const BACKEND_BASE_URL = "http://192.168.1.5:8000/api/v1";
+// Dùng biến môi trường trực tiếp
+const BACKEND_BASE_URL = `${process.env.EXPO_PUBLIC_API_URL}/api/v1`;
 
 /**
  * ThingsBoard Cloud Telemetry Service

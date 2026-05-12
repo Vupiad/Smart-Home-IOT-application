@@ -36,6 +36,7 @@ function sanitizeUser(record: AuthRecord): AuthUser {
 }
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const API_URL = `${BASE_URL}/api/v1/auth`;
 
 export async function login(payload: LoginPayload): Promise<AuthSession> {
