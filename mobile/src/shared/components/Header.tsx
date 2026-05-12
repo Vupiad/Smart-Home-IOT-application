@@ -35,24 +35,7 @@ export default function Header({
   const [currentDate, setCurrentDate] = useState<string>("");
 
   useEffect(() => {
-    // Set formatted current date: "Wed, May 24th"
-    const updateDate = () => {
-      const now = new Date();
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-      const dayName = days[now.getDay()];
-      const monthName = months[now.getMonth()];
-      const date = now.getDate();
-
-      let suffix = "th";
-      if (date === 1 || date === 21 || date === 31) suffix = "st";
-      else if (date === 2 || date === 22) suffix = "nd";
-      else if (date === 3 || date === 23) suffix = "rd";
-
-      setCurrentDate(`${dayName}, ${monthName} ${date}${suffix}`);
-    };
-    updateDate();
+    setCurrentDate("Fri May 15th 2026");
 
     // Fetch real-time data
     const loadTelemetry = async () => {
@@ -77,7 +60,6 @@ export default function Header({
     loadTelemetry();
     const interval = setInterval(() => {
       loadTelemetry();
-      updateDate();
     }, 5000);
 
     return () => clearInterval(interval);
