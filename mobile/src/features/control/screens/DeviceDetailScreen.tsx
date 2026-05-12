@@ -164,7 +164,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
     }
 
     if (doorPassword.trim() !== DOOR_ACCESS_PASSWORD) {
-      Alert.alert("Error", "Mật khẩu không đúng. Cửa vẫn đang khóa.");
+      Alert.alert("Error", "Incorrect password. The door remains locked.");
       return;
     }
 
@@ -405,7 +405,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Chỉnh sửa thông tin</Text>
+              <Text style={styles.modalTitle}>Edit Details</Text>
               <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
@@ -415,16 +415,16 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               showsVerticalScrollIndicator={false}
               style={styles.modalBody}
             >
-              <Text style={styles.inputLabel}>Tên thiết bị</Text>
+              <Text style={styles.inputLabel}>Device Name</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="VD: Đèn trần"
+                placeholder="e.g. Ceiling Light"
                 value={editName}
                 onChangeText={setEditName}
                 editable={!isEditSaving}
               />
 
-              <Text style={styles.inputLabel}>Phòng</Text>
+              <Text style={styles.inputLabel}>Room</Text>
               <View style={styles.typeSelector}>
                 {["Living room", "Bedroom", "Kitchen", "Garage"].map((room) => (
                   <TouchableOpacity
@@ -448,10 +448,10 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 ))}
               </View>
 
-              <Text style={styles.inputLabel}>Mô tả</Text>
+              <Text style={styles.inputLabel}>Description</Text>
               <TextInput
                 style={[styles.modalInput, styles.modalInputMultiline]}
-                placeholder="VD: Đèn chính"
+                placeholder="e.g. Main light"
                 value={editSubtitle}
                 onChangeText={setEditSubtitle}
                 editable={!isEditSaving}
@@ -470,7 +470,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 {isEditSaving ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Lưu thay đổi</Text>
+                  <Text style={styles.submitButtonText}>Save Changes</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -491,14 +491,14 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               <Ionicons name="key" size={48} color="#2D5BFF" />
             </View>
 
-            <Text style={styles.confirmModalTitle}>Nhập mật khẩu mở cửa</Text>
+            <Text style={styles.confirmModalTitle}>Enter Door Password</Text>
             <Text style={styles.confirmModalText}>
-              Cần xác thực mật khẩu trước khi mở khóa cửa.
+              A password is required before unlocking the door.
             </Text>
 
             <TextInput
               style={styles.doorPasswordInput}
-              placeholder="Mật khẩu"
+              placeholder="Password"
               placeholderTextColor="#9CA3AF"
               value={doorPassword}
               onChangeText={setDoorPassword}
@@ -514,7 +514,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 onPress={closeDoorPasswordModal}
                 disabled={saving}
               >
-                <Text style={styles.confirmButtonCancelText}>Hủy</Text>
+                <Text style={styles.confirmButtonCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -528,7 +528,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 {saving ? (
                   <ActivityIndicator color="#FFF" size="small" />
                 ) : (
-                  <Text style={styles.confirmButtonDeleteText}>Mở cửa</Text>
+                  <Text style={styles.confirmButtonDeleteText}>Unlock Door</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -549,10 +549,10 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
               <Ionicons name="warning" size={48} color="#FF6B6B" />
             </View>
 
-            <Text style={styles.confirmModalTitle}>Xóa thiết bị?</Text>
+            <Text style={styles.confirmModalTitle}>Delete Device?</Text>
             <Text style={styles.confirmModalText}>
-              Bạn có chắc chắn muốn xóa "{detail.name}"? Hành động này không thể
-              hoàn tác.
+              Are you sure you want to delete "{detail.name}"? This action
+              cannot be undone.
             </Text>
 
             <View style={styles.confirmButtonRow}>
@@ -561,7 +561,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 onPress={() => setIsDeleteModalVisible(false)}
                 disabled={isDeleting}
               >
-                <Text style={styles.confirmButtonCancelText}>Hủy</Text>
+                <Text style={styles.confirmButtonCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -575,7 +575,7 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
                 {isDeleting ? (
                   <ActivityIndicator color="#FFF" size="small" />
                 ) : (
-                  <Text style={styles.confirmButtonDeleteText}>Xóa</Text>
+                  <Text style={styles.confirmButtonDeleteText}>Delete</Text>
                 )}
               </TouchableOpacity>
             </View>

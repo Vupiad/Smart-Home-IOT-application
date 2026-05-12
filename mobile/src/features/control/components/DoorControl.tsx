@@ -9,11 +9,11 @@ type Props = {
 export default function DoorControl({ detail }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>Cửa</Text>
+      <Text style={styles.label}>Door</Text>
       <Text style={styles.hint}>
-        Bật/tắt công tắc phía trên để khóa hoặc mở khóa. Trạng thái hiện tại:{" "}
+        Use the switch above to lock or unlock the door. Current status:{" "}
         <Text style={styles.emph}>
-          {detail.lockStatus === "unlocked" ? "Đang mở khóa" : "Đã khóa"}
+          {detail.lockStatus === "unlocked" ? "Unlocked" : "Locked"}
         </Text>
       </Text>
     </View>

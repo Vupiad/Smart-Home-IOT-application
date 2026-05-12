@@ -55,13 +55,14 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
         isOn: d.isOn,
         subtitle: d.subtitle,
         icon:
-          d.type === "light"
+          d.icon ||
+          (d.type === "light"
             ? "bulb-outline"
             : d.type === "fan"
               ? "aperture-outline"
               : d.type === "ac"
                 ? "snow-outline"
-                : "lock-closed-outline",
+                : "lock-closed-outline"),
       }));
       setDevices(mappedDevices as DeviceCatalogItem[]);
     } catch (err) {

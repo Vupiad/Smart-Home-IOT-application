@@ -117,7 +117,7 @@ export default function LightControl({
     if (detail.id.includes("living-room")) {
       return require("../../../../assets/pendant-light-living-room.png");
     }
-    return require("../../../../assets/lamp-bedroom.png");
+    return require("../../../../assets/lightbulb-kitchen.png");
   }, [detail.id, detail.style]);
 
   const adjustSleepHour = (delta: number) => {

@@ -8,7 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { sharedCardStyles, sharedCardTokens } from "../styles/deviceCards";
 
 interface DeviceCardProps {
@@ -34,6 +34,26 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
     onToggle?.(value);
   };
 
+  const renderIcon = () => {
+    if (icon === "fan") {
+      return <MaterialCommunityIcons name="fan" size={36} color="#555" />;
+    }
+
+    if (icon === "air-conditioner") {
+      return <MaterialCommunityIcons name="air-conditioner" size={36} color="#555" />;
+    }
+
+    if (icon === "lamp-outline") {
+      return <MaterialCommunityIcons name="lamp-outline" size={36} color="#555" />;
+    }
+
+    if (icon === "door-closed-outline") {
+      return <MaterialCommunityIcons name="door-closed" size={36} color="#555" />;
+    }
+
+    return <Ionicons name={(icon || "bulb-outline") as any} size={36} color="#555" />;
+  };
+
   return (
     <TouchableOpacity
       style={[sharedCardStyles.cardBase, styles.card, cardStyle]}
@@ -42,7 +62,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
       disabled={!onPress}
     >
       <View style={sharedCardStyles.iconBox}>
-        <Ionicons name={icon as any} size={36} color="#555" />
+        {renderIcon()}
       </View>
       <Text
         style={[

@@ -51,6 +51,33 @@ export function normalizeDeviceType(raw: string): DeviceSummary["type"] {
   return "light";
 }
 
+function inferDeviceIcon(rawType: string, name: string, stateStyle?: unknown): string {
+  const type = String(rawType ?? "").toLowerCase().replace(/-/g, "_");
+  const lowerName = String(name ?? "").toLowerCase();
+
+  if (type === "fan") {
+    return "fan";
+  }
+
+  if (type === "ac" || type === "air_conditioner") {
+    return "air-conditioner";
+  }
+
+  if (type === "door") {
+    return "door-closed-outline";
+  }
+
+  if (stateStyle === "lamp" || type === "lamp" || lowerName.includes("lamp")) {
+    return "lamp-outline";
+  }
+
+  if (stateStyle === "pendant" || type === "pendant") {
+    return "bulb-outline";
+  }
+
+  return "bulb-outline";
+}
+
 function rgbObjToHex(
   c: { r?: number; g?: number; b?: number } | undefined,
   fallback = "#FFFFFF",
@@ -421,6 +448,7 @@ export async function getDevices(): Promise<DeviceSummary[]> {
         isOn,
         room: s.room || "Khách",
         subtitle: s.subtitle || "",
+        icon: inferDeviceIcon(device.device_type, device.name, s.style),
       };
     });
   } catch (error: any) {

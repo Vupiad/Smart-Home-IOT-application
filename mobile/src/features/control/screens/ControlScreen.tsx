@@ -34,7 +34,8 @@ const ControlScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { devices, setDevicePower, refreshDevices } = useSmartHomeContext();
-  const navigation = useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
   const normalizedRoomSearch = searchText.trim().toLowerCase();
 
@@ -56,10 +57,10 @@ const ControlScreen: React.FC = () => {
 
   const handleAddDevice = async () => {
     if (!newDeviceName || !newDeviceRoom) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ tên và phòng");
+      Alert.alert("Error", "Please enter both a name and a room");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       let finalType = newDeviceType;
@@ -83,15 +84,15 @@ const ControlScreen: React.FC = () => {
         base_topic: "yolohome/device/yolo_uno_01",
         lightStyle,
       });
-      
-      Alert.alert("Thành công", "Đã thêm thiết bị mới!");
+
+      Alert.alert("Success", "New device added successfully!");
       setIsAddModalVisible(false);
       setNewDeviceName("");
-      
-      // Tải lại danh sách thiết bị
+
+      // Reload device list
       await refreshDevices();
     } catch (error: any) {
-      Alert.alert("Lỗi", error.message || "Không thể thêm thiết bị");
+      Alert.alert("Error", error.message || "Unable to add device");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +106,6 @@ const ControlScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         {/* Search */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
@@ -123,12 +123,12 @@ const ControlScreen: React.FC = () => {
         <View style={styles.filterSection}>
           <View style={styles.filterHeaderRow}>
             <Text style={styles.filterLabel}>Filter by device</Text>
-            <TouchableOpacity 
-              style={styles.addButtonSmall} 
+            <TouchableOpacity
+              style={styles.addButtonSmall}
               onPress={() => setIsAddModalVisible(true)}
             >
               <Ionicons name="add" size={20} color="#2D5BFF" />
-              <Text style={styles.addButtonSmallText}>Thêm thiết bị</Text>
+              <Text style={styles.addButtonSmallText}>Add Device</Text>
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -183,12 +183,14 @@ const ControlScreen: React.FC = () => {
             ))}
           </View>
           {filteredDevices.length === 0 && (
-            <Text style={styles.emptyText}>No devices found for this filter.</Text>
+            <Text style={styles.emptyText}>
+              No devices found for this filter.
+            </Text>
           )}
         </View>
       </ScrollView>
 
-      {/* Modal Thêm Thiết Bị */}
+      {/* Add Device Modal */}
       <Modal
         visible={isAddModalVisible}
         animationType="slide"
@@ -198,24 +200,24 @@ const ControlScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Thêm thiết bị mới</Text>
+              <Text style={styles.modalTitle}>Add New Device</Text>
               <TouchableOpacity onPress={() => setIsAddModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>Tên thiết bị</Text>
+              <Text style={styles.inputLabel}>Device Name</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="VD: Đèn trần"
+                placeholder="e.g. Ceiling Light"
                 value={newDeviceName}
                 onChangeText={setNewDeviceName}
               />
 
-              <Text style={styles.inputLabel}>Phòng</Text>
+              <Text style={styles.inputLabel}>Room</Text>
               <View style={styles.typeSelector}>
-                {(["Living room", "Bedroom", "Kitchen", "Garage"]).map((room) => (
+                {["Living room", "Bedroom", "Kitchen", "Garage"].map((room) => (
                   <TouchableOpacity
                     key={room}
                     style={[
@@ -236,49 +238,56 @@ const ControlScreen: React.FC = () => {
                 ))}
               </View>
 
-              <Text style={styles.inputLabel}>Loại thiết bị</Text>
+              <Text style={styles.inputLabel}>Device Type</Text>
               <View style={styles.typeSelector}>
-                {(["light_bulb", "pendant", "lamp", "fan", "ac", "door"]).map((type) => {
-                  let label = type.toUpperCase();
-                  if (type === "light_bulb") label = "LIGHT BULB";
-                  if (type === "pendant") label = "PENDANT";
-                  if (type === "lamp") label = "LAMP";
+                {["light_bulb", "pendant", "lamp", "fan", "ac", "door"].map(
+                  (type) => {
+                    let label = type.toUpperCase();
+                    if (type === "light_bulb") label = "LIGHT BULB";
+                    if (type === "pendant") label = "PENDANT";
+                    if (type === "lamp") label = "LAMP";
 
-                  return (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.typeChip,
-                        newDeviceType === type && styles.typeChipActive,
-                      ]}
-                      onPress={() => setNewDeviceType(type)}
-                    >
-                      <Text
+                    return (
+                      <TouchableOpacity
+                        key={type}
                         style={[
-                          styles.typeChipText,
-                          newDeviceType === type && styles.typeChipTextActive,
+                          styles.typeChip,
+                          newDeviceType === type && styles.typeChipActive,
                         ]}
+                        onPress={() => setNewDeviceType(type)}
                       >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                        <Text
+                          style={[
+                            styles.typeChipText,
+                            newDeviceType === type && styles.typeChipTextActive,
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  },
+                )}
               </View>
 
-              <TouchableOpacity 
-                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]} 
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  isSubmitting && styles.submitButtonDisabled,
+                ]}
                 onPress={handleAddDevice}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Thêm vào hệ thống</Text>
+                  <Text style={styles.submitButtonText}>Add to System</Text>
                 )}
               </TouchableOpacity>
               <Text style={styles.modalNote}>
-                *Lưu ý: Thiết bị này mới chỉ được tạo trên Database. Bạn cần code firmware kết nối phần cứng thực tế vào MQTT Topic trùng khớp để điều khiển được!
+                *Note: This device is only created in the database. You still
+                need firmware that connects the real hardware to the matching
+                MQTT topic before it can be controlled.
               </Text>
             </ScrollView>
           </View>
@@ -477,7 +486,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     lineHeight: 18,
-  }
+  },
 });
 
 export default ControlScreen;
