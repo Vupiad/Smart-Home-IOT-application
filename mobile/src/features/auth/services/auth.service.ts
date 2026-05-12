@@ -1,4 +1,11 @@
-import { AuthSession, AuthUser, LoginPayload, SignUpPayload, UpdateProfilePayload, ChangePasswordPayload } from "../types";
+import {
+  AuthSession,
+  AuthUser,
+  LoginPayload,
+  SignUpPayload,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
+} from "../types";
 import { setStoredToken } from "../../../shared/storage/tokenStorage";
 
 type AuthRecord = AuthUser & { password: string };
@@ -17,7 +24,6 @@ function wait(ms: number) {
     setTimeout(resolve, ms);
   });
 }
-
 
 function sanitizeUser(record: AuthRecord): AuthUser {
   return {
@@ -111,7 +117,9 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+export async function updateProfile(
+  payload: UpdateProfilePayload,
+): Promise<AuthUser> {
   await wait(240);
 
   const record = mockUsers.find((item) => item.id === payload.userId);
@@ -121,12 +129,15 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<Auth
 
   record.fullName = payload.fullName.trim();
   if (payload.phone !== undefined) record.phone = payload.phone.trim();
-  if (payload.dateOfBirth !== undefined) record.dateOfBirth = payload.dateOfBirth.trim();
-  
+  if (payload.dateOfBirth !== undefined)
+    record.dateOfBirth = payload.dateOfBirth.trim();
+
   return sanitizeUser(record);
 }
 
-export async function changePassword(payload: ChangePasswordPayload): Promise<void> {
+export async function changePassword(
+  payload: ChangePasswordPayload,
+): Promise<void> {
   await wait(240);
 
   const record = mockUsers.find((item) => item.id === payload.userId);
