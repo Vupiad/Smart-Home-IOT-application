@@ -1,10 +1,8 @@
 """REST API endpoints for device control via MQTT."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, Any, Dict
-from database.models.device import Device
-from database.database_manager import IDatabaseManager
+from typing import Any, Dict
 from services.device_service import DeviceService
 from services.mqtt_service import MqttService
 from database.repository import IDeviceRepository
@@ -61,9 +59,7 @@ async def update_device_state(
             success=success,
             message="Action executed successfully" if success else "Failed to execute action",
             device_id=device_id,
-            # We return the requested state immediately for UI optimism, 
-            # while the real state will be synced from MQTT ack later
-            device_state=request.state if success else device.state 
+            device_state=device.state,
         )
     
     except ValueError as e:

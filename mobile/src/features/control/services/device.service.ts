@@ -159,7 +159,7 @@ function toSummary(device: ApiDevice): DeviceSummary {
   const state = device.state ?? {};
   const isOn =
     type === "door"
-      ? String(state.status ?? "").toLowerCase() === "locked"
+      ? String(state.status ?? "").toLowerCase() === "unlocked"
       : toBoolStatus(state.status);
 
   return {
@@ -256,8 +256,13 @@ export async function getDeviceDetail(deviceId: string): Promise<DeviceDetail> {
 export async function toggleDevicePower(
   deviceId: string,
   payload: ToggleDevicePowerPayload | boolean,
+  deviceType?: DeviceSummaryType,
 ): Promise<void> {
   const isOn = typeof payload === "boolean" ? payload : payload.isOn;
+  if (deviceType === "door") {
+    await updateDeviceState(deviceId, { status: isOn ? "unlocked" : "locked" });
+    return;
+  }
   await updateDeviceState(deviceId, { status: isOn ? "on" : "off" });
 }
 

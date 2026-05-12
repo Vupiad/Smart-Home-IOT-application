@@ -86,8 +86,7 @@ export default function AddAutomationScreen() {
           status: state.status.includes("off") ? "off" : "on",
           // Hardcode
           color: { r: 255, g: 255, b: 255 },
-          // Hardcode
-          brightness: 100
+
         } as any;
       }
 
@@ -116,6 +115,8 @@ export default function AddAutomationScreen() {
   const [tempACTemp, setTempACTemp] = useState(24);
   const [tempACMode, setTempACMode] = useState("cool");
   const [tempACFan, setTempACFan] = useState("1");
+  const [tempLightStatus, setTempLightStatus] = useState("off");
+  const [tempDoorStatus, setTempDoorStatus] = useState("locked");
   const [tempIsActive, setTempIsActive] = useState(true);
 
   const parseTime = (timeStr: string) => {
@@ -258,7 +259,7 @@ export default function AddAutomationScreen() {
         if (selectedDevice.type === "light") {
           updatedDevices[idx].state = {
             ...updatedDevices[idx].state,
-            status: tempACMode === "on" ? "on" : "off",
+            status: tempLightStatus,
             color: tempColor,
             brightness: tempBrightness,
           };
@@ -279,7 +280,7 @@ export default function AddAutomationScreen() {
         } else if (selectedDevice.type === "door") {
           updatedDevices[idx].state = {
             ...updatedDevices[idx].state,
-            status: tempACMode === "locked" ? "locked" : "unlocked",
+            status: tempDoorStatus,
           };
         }
         setDevices(updatedDevices);
@@ -311,7 +312,7 @@ export default function AddAutomationScreen() {
 
     if (device.type === "light") {
       setTempColor(device.state?.color || { r: 255, g: 255, b: 255 });
-      setTempACMode(device.state?.status === "on" ? "on" : "off");
+      setTempLightStatus(device.state?.status === "on" ? "on" : "off");
       setTempBrightness((device.state as any).brightness || 100);
     } else if (device.type === "fan") {
       setTempACFan(device.state?.speed || "1");
@@ -321,7 +322,7 @@ export default function AddAutomationScreen() {
       setTempACMode((device.state as any).mode || "cool");
       setTempACFan((device.state as any).fanSpeed || "1");
     } else if (device.type === "door") {
-      setTempACMode(
+      setTempDoorStatus(
         device.state?.status?.toLowerCase() === "locked" ? "locked" : "unlocked"
       );
     }
@@ -504,7 +505,23 @@ export default function AddAutomationScreen() {
               <View style={{ width: "100%" }}>
                 <View style={styles.premiumConfigCard}>
 
-                  <Text style={[styles.configLabel, { marginBottom: 10 }]}>Brightness</Text>
+                  <Text style={[styles.configLabel, { marginBottom: 10 }]}>Power</Text>
+                  <View style={styles.powerToggleRow}>
+                    <TouchableOpacity
+                      style={[styles.powerToggleBtn, tempLightStatus === "off" && styles.powerToggleBtnOffActive]}
+                      onPress={() => setTempLightStatus("off")}
+                    >
+                      <Text style={[styles.powerToggleText, tempLightStatus === "off" && styles.powerToggleTextOffActive]}>OFF</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.powerToggleBtn, tempLightStatus === "on" && styles.powerToggleBtnOnActive]}
+                      onPress={() => setTempLightStatus("on")}
+                    >
+                      <Text style={[styles.powerToggleText, tempLightStatus === "on" && styles.powerToggleTextOnActive]}>ON</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.configLabel, { marginBottom: 10, marginTop: 15 }]}>Brightness</Text>
                   <Text style={styles.brightnessValueLarge}>{tempBrightness}%</Text>
                   <View style={styles.brightnessControlRow}>
                     <TouchableOpacity
@@ -639,16 +656,16 @@ export default function AddAutomationScreen() {
                   <View style={{ alignItems: "center", marginVertical: 30 }}>
                     <View style={[
                       styles.lockCircle,
-                      { backgroundColor: tempACMode === "locked" ? "rgba(255, 59, 48, 0.1)" : "rgba(52, 199, 89, 0.1)" }
+                      { backgroundColor: tempDoorStatus === "locked" ? "rgba(255, 59, 48, 0.1)" : "rgba(52, 199, 89, 0.1)" }
                     ]}>
                       <Ionicons
-                        name={tempACMode === "locked" ? "lock-closed" : "lock-open"}
+                        name={tempDoorStatus === "locked" ? "lock-closed" : "lock-open"}
                         size={60}
-                        color={tempACMode === "locked" ? "#FF3B30" : "#34C759"}
+                        color={tempDoorStatus === "locked" ? "#FF3B30" : "#34C759"}
                       />
                     </View>
                     <Text style={styles.lockStatusText}>
-                      {tempACMode === "locked" ? "System Locked" : "System Unlocked"}
+                      {tempDoorStatus === "locked" ? "System Locked" : "System Unlocked"}
                     </Text>
                   </View>
 
@@ -658,16 +675,16 @@ export default function AddAutomationScreen() {
                         key={state}
                         style={[
                           styles.modeChip,
-                          tempACMode === state && {
+                          tempDoorStatus === state && {
                             backgroundColor: state === "locked" ? "#FF3B30" : "#34C759",
                           },
                         ]}
-                        onPress={() => setTempACMode(state)}
+                        onPress={() => setTempDoorStatus(state as "locked" | "unlocked")}
                       >
                         <Text
                           style={[
                             styles.modeChipText,
-                            tempACMode === state && styles.modeChipTextActive,
+                            tempDoorStatus === state && styles.modeChipTextActive,
                           ]}
                         >
                           {state.toUpperCase()}

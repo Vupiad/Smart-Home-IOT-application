@@ -151,7 +151,7 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
 
 ### 4.1 Update Device State (Gửi lệnh MQTT)
 *   **PUT** `/device-control/{device_id}/state`
-*   **Body:** Trạng thái mong muốn của thiết bị (UI format).
+*   **Body:** Trạng thái mong muốn của thiết bị (UI format). Có thể gửi **partial state patch** (backend sẽ merge với state hiện tại trước khi xử lý).
     ```json
     for fan:
     {
@@ -171,6 +171,15 @@ This document outlines the REST APIs and WebSocket endpoints for the Smart Home 
     {
       "state": {
         "status": "locked/unlocked"
+      }
+    }
+    for ac:
+    {
+      "state": {
+        "status": "on",
+        "temp": 24,
+        "mode": "cool",
+        "fanSpeed": 2
       }
     }
     ```

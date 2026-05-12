@@ -28,7 +28,7 @@ const HomeScreen: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
-  const quickAccessDevices = devices.slice(0, 2);
+  const quickAccessDevices = devices.filter(d => d.type === "door" || d.type === "light").slice(0, 3);
   const homeScenes = selectScenesByIds(HOME_SCENE_IDS);
 
   const handleOpenControl = () => {
@@ -93,7 +93,7 @@ const HomeScreen: React.FC = () => {
                   icon={device.icon}
                   isOn={device.isOn}
                   subtitle={device.room}
-                  onToggle={(value) => setDevicePower(device.id, value)}
+                  onToggle={(value) => setDevicePower(device.id, value, device.type)}
                   onPress={() => handleOpenDeviceDetail(device)}
                   cardStyle={styles.quickAccessCard}
                 />

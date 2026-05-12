@@ -51,7 +51,7 @@ type SmartHomeContextValue = {
   telemetry: TelemetryData | null;
   selectDevicesByIds: (ids: string[]) => DeviceCatalogItem[];
   selectScenesByIds: (ids: string[]) => AutomationScene[];
-  setDevicePower: (deviceId: string, isOn: boolean) => Promise<void>;
+  setDevicePower: (deviceId: string, isOn: boolean, deviceType?: DeviceCatalogItem["type"]) => Promise<void>;
   setSceneActive: (sceneId: string, isActive: boolean) => Promise<void>;
   reloadScenes: () => Promise<void>;
   reloadDevices: () => Promise<void>;
@@ -96,9 +96,11 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
         setDevices((prev) =>
           prev.map((device) => {
             if (String(device.id) === String(event.device_id)) {
-              // Extract isOn from status if present
-              const isOn = event.state.status 
-                ? (event.state.status === "on" || event.state.status === "locked")
+              const status = typeof event.state.status === "string"
+                ? event.state.status.toLowerCase()
+                : undefined;
+              const isOn = status
+                ? (device.type === "door" ? status === "unlocked" : status === "on")
                 : device.isOn;
               
               // This is a simplified update. For full accuracy, we'd want to 
@@ -133,7 +135,11 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
         .filter((scene): scene is AutomationScene => Boolean(scene));
     };
 
-    const setDevicePowerState = async (deviceId: string, isOn: boolean) => {
+    const setDevicePowerState = async (
+      deviceId: string,
+      isOn: boolean,
+      deviceType?: DeviceCatalogItem["type"],
+    ) => {
       // Optimistic update
       setDevices((prev) =>
         prev.map((device) =>
@@ -142,7 +148,8 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
       );
 
       try {
-        await toggleDevicePower(deviceId, isOn);
+        const resolvedType = deviceType ?? devices.find((device) => device.id === deviceId)?.type;
+        await toggleDevicePower(deviceId, isOn, resolvedType);
       } catch (error) {
         console.error("Failed to toggle device power:", error);
         // Revert on error

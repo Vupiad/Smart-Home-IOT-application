@@ -94,11 +94,16 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
       return;
     }
 
+    const nextState: DeviceDetail =
+      detail.type === "door"
+        ? { ...detail, isOn, status: isOn ? "unlocked" : "locked" }
+        : { ...detail, isOn };
+
     void runUpdate(
       async () => {
-        await toggleDevicePower(detail.id, isOn);
+        await toggleDevicePower(detail.id, isOn, detail.type);
       },
-      { ...detail, isOn },
+      nextState,
     );
   };
 

@@ -1,6 +1,12 @@
 import { apiRequest } from "../../../shared/services/api.client";
 import { Mode, CreateModeDto } from "../types";
 
+type ToggleModeResponse = {
+  message: string;
+  mode_id: number;
+  isActive: boolean;
+};
+
 export const automationService = {
   getModes: async (): Promise<Mode[]> => {
     return apiRequest<Mode[]>("/modes");
@@ -30,8 +36,8 @@ export const automationService = {
     });
   },
 
-  toggleMode: async (modeId: number | string, isActive: boolean): Promise<Mode> => {
-    return apiRequest<Mode>(`/modes/${modeId}/toggle`, {
+  toggleMode: async (modeId: number | string, isActive: boolean): Promise<ToggleModeResponse> => {
+    return apiRequest<ToggleModeResponse>(`/modes/${modeId}/toggle`, {
       method: "PATCH",
       body: { isActive },
     });

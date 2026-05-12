@@ -115,7 +115,7 @@ const ControlScreen: React.FC = () => {
                 icon={device.icon}
                 isOn={device.isOn}
                 subtitle={device.room}
-                onToggle={(isOn) => setDevicePower(device.id, isOn)}
+                onToggle={(isOn) => setDevicePower(device.id, isOn, device.type)}
                 onPress={() => handleOpenDeviceDetail(device)}
               />
             ))}

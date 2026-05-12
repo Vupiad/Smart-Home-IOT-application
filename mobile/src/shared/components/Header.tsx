@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import styles, { headerIconTokens } from "./Header.styles";
 import { useSmartHomeContext } from "../../shared/state/SmartHomeContext";
+import { fetchRealtimeTelemetry } from "../services/sensor.service";
 
 type HeaderProps = {
   tabName: string;
@@ -30,8 +31,8 @@ export default function Header({
   onAddPress,
   rightElement, // 2. Nhận prop
 }: HeaderProps) {
-  const [currentTemp, setCurrentTemp] = useState<string>("28.0°C"); // Default fallback
-  const [currentHumidity, setCurrentHumidity] = useState<string>("70.0%"); // Default fallback
+  const [currentTemp, setCurrentTemp] = useState<string>("--°C");
+  const [currentHumidity, setCurrentHumidity] = useState<string>("--%");
   const [currentDate, setCurrentDate] = useState<string>("");
 
   const { telemetry } = useSmartHomeContext();
@@ -61,6 +62,24 @@ export default function Header({
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadLatestTelemetry = async () => {
+      const result = await fetchRealtimeTelemetry(1);
+      const latest = result.data[result.data.length - 1];
+
+      if (!latest) {
+        return;
+      }
+
+      setCurrentTemp(`${latest.temperature.toFixed(1)}°C`);
+      setCurrentHumidity(`${latest.humidity.toFixed(1)}%`);
+    };
+
+    loadLatestTelemetry().catch((error) => {
+      console.warn("[Header] Failed to load latest telemetry:", error);
+    });
   }, []);
 
   useEffect(() => {
