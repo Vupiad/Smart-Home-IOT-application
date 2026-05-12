@@ -10,7 +10,9 @@ git checkout integration
 
 Tài khoản login
 user@example.com
-password
+password123
+
+Mật khẩu cửa là 123456
 
 ## 1. Môi trường Backend (BE)
 

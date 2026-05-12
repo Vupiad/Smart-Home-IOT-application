@@ -8,15 +8,6 @@
       "phone": "0987654321",
       "dateOfBirth": "28/06/2000",
       "created_at": null
-    },
-    {
-      "id": 2,
-      "email": "linh@example.com",
-      "hashed_password": "$pbkdf2-sha256$29000$xZjTGqOUEqJ07r33fq9V6g$BKNuykoiMfjYfxRrRH5YNeLGPTDx/IjFWDPPCa1Sx60",
-      "fullName": "Linh Tran",
-      "phone": "0812333456",
-      "dateOfBirth": "18/05/2000",
-      "created_at": null
     }
   ],
   "devices": [
@@ -30,14 +21,14 @@
       "state": {
         "status": "off",
         "color": {
-          "r": 0,
-          "g": 0,
-          "b": 0
+          "r": 246,
+          "g": 193,
+          "b": 38
         },
         "brightness": 50,
         "room": "Bedroom",
         "subtitle": "",
-        "timerMinutes": 3,
+        "timerMinutes": 1378,
         "shutoffTime": "09:20"
       },
       "is_online": false,
@@ -52,7 +43,8 @@
       "last_online": "2026-04-25T15:13:46.985323",
       "state": {
         "status": "on",
-        "speed": 100
+        "speed": 100,
+        "timerMinutes": 1080
       },
       "is_online": false,
       "last_seen": null
@@ -66,6 +58,65 @@
       "last_online": "2026-04-25T15:15:59.424354",
       "state": {
         "status": "locked"
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 4,
+      "owner_id": 1,
+      "name": "Bedroom Lamp",
+      "device_type": "lamp",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-05-12T22:55:23.679372",
+      "state": {
+        "room": "Bedroom",
+        "subtitle": "New device",
+        "status": "off",
+        "style": "lamp",
+        "timerMinutes": 880,
+        "color": {
+          "r": 246,
+          "g": 193,
+          "b": 38
+        }
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 5,
+      "owner_id": 1,
+      "name": "Living room pendant",
+      "device_type": "pendant",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-05-12T22:55:49.515297",
+      "state": {
+        "room": "Living room",
+        "subtitle": "New device",
+        "status": "off",
+        "style": "pendant",
+        "color": {
+          "r": 246,
+          "g": 193,
+          "b": 38
+        }
+      },
+      "is_online": false,
+      "last_seen": null
+    },
+    {
+      "id": 6,
+      "owner_id": 1,
+      "name": "AC living room",
+      "device_type": "ac",
+      "base_topic": "yolohome/device/yolo_uno_01",
+      "last_online": "2026-05-12T23:05:09.240160",
+      "state": {
+        "room": "Living room",
+        "subtitle": "New device",
+        "status": "off",
+        "timerMinutes": 1439
       },
       "is_online": false,
       "last_seen": null
@@ -139,7 +190,7 @@
   ],
   "_meta": {
     "next_user_id": 2,
-    "next_device_id": 4,
+    "next_device_id": 7,
     "next_mode_id": 3
   }
 }

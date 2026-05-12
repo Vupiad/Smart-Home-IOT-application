@@ -53,6 +53,16 @@ function formatSleepClock(clock: SleepClock): string {
   return `${clock.hour}:${minute} ${clock.period}`;
 }
 
+function formatTurnOffLabel(timerMinutes: number): string | null {
+  if (timerMinutes <= 0) {
+    return null;
+  }
+
+  return `Device will turn off at ${formatSleepClock(
+    toSleepClockFromMinutes(timerMinutes),
+  )}`;
+}
+
 export default function ACControl({
   detail,
   onChangeTemperature,
@@ -76,9 +86,15 @@ export default function ACControl({
   const [draftFanSpeed, setDraftFanSpeed] = useState<1 | 2 | 3>(
     detail.fanSpeed,
   );
+  const [turnOffLabel, setTurnOffLabel] = useState<string | null>(() =>
+    formatTurnOffLabel(detail.timerMinutes),
+  );
 
   useEffect(() => {
-    setSleepClock(toSleepClockFromMinutes(detail.timerMinutes));
+    const nextClock = toSleepClockFromMinutes(detail.timerMinutes);
+    setSleepClock(nextClock);
+    setDraftSleepClock(nextClock);
+    setTurnOffLabel(formatTurnOffLabel(detail.timerMinutes));
   }, [detail.timerMinutes]);
 
   useEffect(() => {
@@ -102,6 +118,7 @@ export default function ACControl({
   const openEditor = (editor: "humidity" | "sleep" | "fan") => {
     if (editor === "sleep") {
       setDraftSleepClock(toSleepClockFromMinutes(detail.timerMinutes));
+      setTurnOffLabel(null);
     }
     if (editor === "humidity") {
       setDraftMode(detail.mode);
@@ -115,7 +132,9 @@ export default function ACControl({
   const saveEditor = () => {
     if (activeEditor === "sleep") {
       setSleepClock(draftSleepClock);
-      onChangeTimer(toTimerMinutes(draftSleepClock));
+      const nextTimerMinutes = toTimerMinutes(draftSleepClock);
+      onChangeTimer(nextTimerMinutes);
+      setTurnOffLabel(formatTurnOffLabel(nextTimerMinutes));
     }
     if (activeEditor === "humidity") {
       onChangeMode(draftMode);
@@ -128,6 +147,11 @@ export default function ACControl({
 
   const closeEditor = () => {
     setActiveEditor(null);
+  };
+
+  const cancelSleepTimer = () => {
+    onChangeTimer(0);
+    setTurnOffLabel(null);
   };
 
   const adjustDraftSleepHour = (delta: number) => {
@@ -242,6 +266,17 @@ export default function ACControl({
             );
           })}
         </View>
+        {turnOffLabel && (
+          <View style={styles.schedulerStatusRow}>
+            <Text style={styles.schedulerStatusText}>{turnOffLabel}</Text>
+            <Pressable
+              style={styles.schedulerCancelButton}
+              onPress={cancelSleepTimer}
+            >
+              <Text style={styles.schedulerCancelButtonText}>Cancel</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       <Modal transparent visible={activeEditor !== null} animationType="fade">
@@ -275,12 +310,12 @@ export default function ACControl({
                   </Pressable>
                 </View>
 
-                <View style={styles.sleepAdjustRow}>
+                <View style={[styles.sleepAdjustRow, styles.minuteAdjustRow]}>
                   <Text style={styles.adjustLabel}>Minute</Text>
                   <Pressable
                     style={styles.smallBtn}
                     onPress={() => {
-                      adjustDraftSleepMinute(5);
+                      adjustDraftSleepMinute(1);
                     }}
                   >
                     <Text style={styles.smallBtnText}>+</Text>
@@ -291,7 +326,7 @@ export default function ACControl({
                   <Pressable
                     style={styles.smallBtn}
                     onPress={() => {
-                      adjustDraftSleepMinute(-5);
+                      adjustDraftSleepMinute(-1);
                     }}
                   >
                     <Text style={styles.smallBtnText}>-</Text>
@@ -399,7 +434,9 @@ export default function ACControl({
                 <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
               </Pressable>
               <Pressable style={styles.modalPrimaryButton} onPress={saveEditor}>
-                <Text style={styles.modalPrimaryButtonText}>Save</Text>
+                <Text style={styles.modalPrimaryButtonText}>
+                  {activeEditor === "sleep" ? "Confirm" : "Save"}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -487,6 +524,31 @@ const styles = StyleSheet.create({
     marginTop: 14,
     flexDirection: "row",
     gap: 10,
+  },
+  schedulerStatusRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  schedulerStatusText: {
+    flex: 1,
+    color: "#D6FFE3",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  schedulerCancelButton: {
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  schedulerCancelButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
   quickCard: {
     flex: 1,
@@ -646,6 +708,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 6,
+  },
+  minuteAdjustRow: {
+    marginTop: 24,
   },
   adjustLabel: {
     fontSize: 15,

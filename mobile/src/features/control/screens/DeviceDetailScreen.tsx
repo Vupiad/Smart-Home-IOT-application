@@ -46,6 +46,9 @@ import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 
 type Props = NativeStackScreenProps<ControlStackParamList, "DeviceDetail">;
 
+const DOOR_ACCESS_PASSWORD =
+  process.env.EXPO_PUBLIC_DOOR_PASSWORD ?? "123456";
+
 export default function DeviceDetailScreen({ navigation, route }: Props) {
   const { deviceId, title } = route.params;
   const { refreshDevices, updateDeviceById, removeDeviceById } =
@@ -64,6 +67,14 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
   // Delete modal state
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Door unlock password state
+  const [isDoorPasswordModalVisible, setIsDoorPasswordModalVisible] =
+    useState(false);
+  const [doorPassword, setDoorPassword] = useState("");
+  const [pendingDoorPowerState, setPendingDoorPowerState] = useState<
+    boolean | null
+  >(null);
 
   // Menu state
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -118,6 +129,13 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
       return;
     }
 
+    if (detail.type === "door" && isOn) {
+      setPendingDoorPowerState(true);
+      setDoorPassword("");
+      setIsDoorPasswordModalVisible(true);
+      return;
+    }
+
     let nextDetail: DeviceDetail = { ...detail, isOn } as DeviceDetail;
     if (detail.type === "door") {
       const d = detail as DoorDeviceDetail;
@@ -130,6 +148,36 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
 
     void runUpdate(async () => {
       await toggleDevicePower(nextDetail, isOn);
+    }, nextDetail);
+  };
+
+  const closeDoorPasswordModal = () => {
+    setIsDoorPasswordModalVisible(false);
+    setDoorPassword("");
+    setPendingDoorPowerState(null);
+  };
+
+  const confirmDoorUnlock = async () => {
+    if (!detail || pendingDoorPowerState !== true) {
+      closeDoorPasswordModal();
+      return;
+    }
+
+    if (doorPassword.trim() !== DOOR_ACCESS_PASSWORD) {
+      Alert.alert("Error", "Mật khẩu không đúng. Cửa vẫn đang khóa.");
+      return;
+    }
+
+    closeDoorPasswordModal();
+
+    const nextDetail: DoorDeviceDetail = {
+      ...(detail as DoorDeviceDetail),
+      isOn: true,
+      lockStatus: "unlocked",
+    };
+
+    void runUpdate(async () => {
+      await toggleDevicePower(nextDetail, true);
     }, nextDetail);
   };
 
@@ -430,6 +478,64 @@ export default function DeviceDetailScreen({ navigation, route }: Props) {
         </View>
       </Modal>
 
+      {/* Door Unlock Password Modal */}
+      <Modal
+        visible={isDoorPasswordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDoorPasswordModal}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <View style={styles.confirmIconWrapper}>
+              <Ionicons name="key" size={48} color="#2D5BFF" />
+            </View>
+
+            <Text style={styles.confirmModalTitle}>Nhập mật khẩu mở cửa</Text>
+            <Text style={styles.confirmModalText}>
+              Cần xác thực mật khẩu trước khi mở khóa cửa.
+            </Text>
+
+            <TextInput
+              style={styles.doorPasswordInput}
+              placeholder="Mật khẩu"
+              placeholderTextColor="#9CA3AF"
+              value={doorPassword}
+              onChangeText={setDoorPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!saving}
+            />
+
+            <View style={styles.confirmButtonRow}>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmButtonCancel]}
+                onPress={closeDoorPasswordModal}
+                disabled={saving}
+              >
+                <Text style={styles.confirmButtonCancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  styles.confirmButtonPrimary,
+                  saving && styles.confirmButtonPrimaryDisabled,
+                ]}
+                onPress={confirmDoorUnlock}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.confirmButtonDeleteText}>Mở cửa</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Delete Device Confirmation Modal */}
       <Modal
         visible={isDeleteModalVisible}
@@ -606,6 +712,18 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: "top",
   },
+  doorPasswordInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    backgroundColor: "#F9FAFB",
+    color: "#111827",
+    marginBottom: 24,
+  },
   typeSelector: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -658,7 +776,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 24,
-    marginHorizontal: 24,
+    width: "90%",
+    maxWidth: 420,
     alignItems: "center",
   },
   confirmIconWrapper: {
@@ -715,6 +834,12 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "600",
     fontSize: 14,
+  },
+  confirmButtonPrimary: {
+    backgroundColor: "#2D5BFF",
+  },
+  confirmButtonPrimaryDisabled: {
+    opacity: 0.7,
   },
   body: {
     paddingHorizontal: 18,

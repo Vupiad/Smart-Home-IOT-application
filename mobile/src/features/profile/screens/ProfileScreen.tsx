@@ -10,7 +10,6 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "../../../shared/components/Header";
-import RealtimeEnvironmentChart from "../../../shared/components/RealtimeEnvironmentChart";
 import { theme } from "../../../theme";
 import { useAuthContext } from "../../auth/state/AuthContext";
 
@@ -131,9 +130,6 @@ export default function ProfileScreen() {
           />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-
-        {/* Real-time Temperature & Humidity */}
-        <RealtimeEnvironmentChart />
       </ScrollView>
     </View>
   );

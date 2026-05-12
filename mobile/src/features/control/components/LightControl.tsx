@@ -52,6 +52,16 @@ function formatSleepClock(clock: SleepClock): string {
   return `${clock.hour}:${minute} ${clock.period}`;
 }
 
+function formatTurnOffLabel(timerMinutes: number): string | null {
+  if (timerMinutes <= 0) {
+    return null;
+  }
+
+  return `Device will turn off at ${formatSleepClock(
+    toSleepClockFromMinutes(timerMinutes),
+  )}`;
+}
+
 export default function LightControl({
   detail,
   onChangeBrightness,
@@ -73,9 +83,20 @@ export default function LightControl({
   const [sleepClock, setSleepClock] = useState<SleepClock>(() =>
     toSleepClockFromMinutes(detail.timerMinutes),
   );
+  const [draftSleepClock, setDraftSleepClock] = useState<SleepClock>(() =>
+    toSleepClockFromMinutes(detail.timerMinutes),
+  );
+  const [isSchedulerDirty, setIsSchedulerDirty] = useState(false);
+  const [turnOffLabel, setTurnOffLabel] = useState<string | null>(() =>
+    formatTurnOffLabel(detail.timerMinutes),
+  );
 
   useEffect(() => {
-    setSleepClock(toSleepClockFromMinutes(detail.timerMinutes));
+    const nextClock = toSleepClockFromMinutes(detail.timerMinutes);
+    setSleepClock(nextClock);
+    setDraftSleepClock(nextClock);
+    setTurnOffLabel(formatTurnOffLabel(detail.timerMinutes));
+    setIsSchedulerDirty(false);
   }, [detail.timerMinutes]);
 
   const lightImageSource = useMemo(() => {
@@ -100,23 +121,40 @@ export default function LightControl({
   }, [detail.id, detail.style]);
 
   const adjustSleepHour = (delta: number) => {
-    const rawHour = ((sleepClock.hour - 1 + delta + 12) % 12) + 1;
-    const newClock = { ...sleepClock, hour: rawHour };
-    setSleepClock(newClock);
-    onChangeTimer(toTimerMinutes(newClock));
+    const rawHour = ((draftSleepClock.hour - 1 + delta + 12) % 12) + 1;
+    const newClock = { ...draftSleepClock, hour: rawHour };
+    setDraftSleepClock(newClock);
+    setIsSchedulerDirty(true);
+    setTurnOffLabel(null);
   };
 
   const adjustSleepMinute = (delta: number) => {
-    const nextMinute = (sleepClock.minute + delta + 60) % 60;
-    const newClock = { ...sleepClock, minute: nextMinute };
-    setSleepClock(newClock);
-    onChangeTimer(toTimerMinutes(newClock));
+    const nextMinute = (draftSleepClock.minute + delta + 60) % 60;
+    const newClock = { ...draftSleepClock, minute: nextMinute };
+    setDraftSleepClock(newClock);
+    setIsSchedulerDirty(true);
+    setTurnOffLabel(null);
   };
 
   const changeSleepPeriod = (period: "AM" | "PM") => {
-    const newClock = { ...sleepClock, period };
-    setSleepClock(newClock);
-    onChangeTimer(toTimerMinutes(newClock));
+    const newClock = { ...draftSleepClock, period };
+    setDraftSleepClock(newClock);
+    setIsSchedulerDirty(true);
+    setTurnOffLabel(null);
+  };
+
+  const confirmSleepTimer = () => {
+    const nextTimerMinutes = toTimerMinutes(draftSleepClock);
+    setSleepClock(draftSleepClock);
+    onChangeTimer(nextTimerMinutes);
+    setTurnOffLabel(formatTurnOffLabel(nextTimerMinutes));
+    setIsSchedulerDirty(false);
+  };
+
+  const cancelSleepTimer = () => {
+    onChangeTimer(0);
+    setTurnOffLabel(null);
+    setIsSchedulerDirty(false);
   };
 
   const handleBrightnessDrag = (x: number) => {
@@ -231,7 +269,7 @@ export default function LightControl({
       <View style={styles.gaugeCard}>
         <Text style={styles.gaugeTitle}>Scheduler</Text>
         <Text style={styles.sleepDisplayValue}>
-          {formatSleepClock(sleepClock)}
+          {formatSleepClock(draftSleepClock)}
         </Text>
 
         <View style={styles.sleepAdjustRow}>
@@ -244,7 +282,7 @@ export default function LightControl({
           >
             <Text style={styles.smallBtnText}>+</Text>
           </Pressable>
-          <Text style={styles.adjustValue}>{sleepClock.hour}</Text>
+          <Text style={styles.adjustValue}>{draftSleepClock.hour}</Text>
           <Pressable
             style={styles.smallBtn}
             onPress={() => {
@@ -255,23 +293,23 @@ export default function LightControl({
           </Pressable>
         </View>
 
-        <View style={styles.sleepAdjustRow}>
+        <View style={[styles.sleepAdjustRow, styles.minuteAdjustRow]}>
           <Text style={styles.adjustLabel}>Minute</Text>
           <Pressable
             style={styles.smallBtn}
             onPress={() => {
-              adjustSleepMinute(5);
+              adjustSleepMinute(1);
             }}
           >
             <Text style={styles.smallBtnText}>+</Text>
           </Pressable>
           <Text style={styles.adjustValue}>
-            {String(sleepClock.minute).padStart(2, "0")}
+            {String(draftSleepClock.minute).padStart(2, "0")}
           </Text>
           <Pressable
             style={styles.smallBtn}
             onPress={() => {
-              adjustSleepMinute(-5);
+              adjustSleepMinute(-1);
             }}
           >
             <Text style={styles.smallBtnText}>-</Text>
@@ -280,7 +318,7 @@ export default function LightControl({
 
         <View style={styles.periodToggleRow}>
           {(["AM", "PM"] as const).map((period) => {
-            const isPeriodActive = sleepClock.period === period;
+            const isPeriodActive = draftSleepClock.period === period;
             return (
               <Pressable
                 key={period}
@@ -304,6 +342,28 @@ export default function LightControl({
             );
           })}
         </View>
+
+        <Pressable
+          style={[
+            styles.schedulerConfirmButton,
+            !isSchedulerDirty && styles.schedulerConfirmButtonDisabled,
+          ]}
+          onPress={confirmSleepTimer}
+          disabled={!isSchedulerDirty}
+        >
+          <Text style={styles.schedulerConfirmButtonText}>Confirm Scheduler</Text>
+        </Pressable>
+        {turnOffLabel && (
+          <View style={styles.schedulerStatusRow}>
+            <Text style={styles.schedulerStatusText}>{turnOffLabel}</Text>
+            <Pressable
+              style={styles.schedulerCancelButton}
+              onPress={cancelSleepTimer}
+            >
+              <Text style={styles.schedulerCancelButtonText}>Cancel</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -417,6 +477,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 6,
   },
+  minuteAdjustRow: {
+    marginTop: 24,
+  },
   adjustLabel: {
     fontSize: 15,
     color: "#657086",
@@ -466,5 +529,45 @@ const styles = StyleSheet.create({
   },
   periodTextActive: {
     color: "#FFFFFF",
+  },
+  schedulerConfirmButton: {
+    marginTop: 18,
+    borderRadius: 10,
+    backgroundColor: "#2D5BFF",
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  schedulerConfirmButtonDisabled: {
+    backgroundColor: "#AFC0ED",
+  },
+  schedulerConfirmButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  schedulerStatusRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  schedulerStatusText: {
+    flex: 1,
+    color: "#1E8E3E",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  schedulerCancelButton: {
+    borderRadius: 8,
+    backgroundColor: "#FEE2E2",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  schedulerCancelButtonText: {
+    color: "#DC2626",
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

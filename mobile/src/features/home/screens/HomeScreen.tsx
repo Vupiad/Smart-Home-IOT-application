@@ -16,6 +16,7 @@ import { HOME_SCENE_IDS } from "../../../shared/constants/devices";
 import { useSmartHomeContext } from "../../../shared/state/SmartHomeContext";
 import { ControlStackParamList } from "../../../navigation/TabNavigator";
 import { DeviceType } from "../../control/types";
+import { useAuthContext } from "../../auth/state/AuthContext";
 import { theme } from "../../../theme";
 
 const HomeScreen: React.FC = () => {
@@ -25,6 +26,7 @@ const HomeScreen: React.FC = () => {
     setDevicePower,
     setSceneActive,
   } = useSmartHomeContext();
+  const { user } = useAuthContext();
   const navigation =
     useNavigation<NativeStackNavigationProp<ControlStackParamList>>();
 
@@ -52,7 +54,7 @@ const HomeScreen: React.FC = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.bodyContent}>
           <View style={styles.welcomeSection}>
-            <Text style={styles.greeting}>Hi, Hoang Trang</Text>
+            <Text style={styles.greeting}>Hi, {user?.fullName || "User"}</Text>
             <Text style={styles.subtitle}>
               Welcome to "Smart Living"! Take control as you begin your
               seamless journey of home automation
