@@ -2,7 +2,7 @@ const RAW_API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
 const API_BASE_URL = (RAW_API_BASE_URL && RAW_API_BASE_URL.length > 0
   ? RAW_API_BASE_URL
-  : "http://localhost:8000/api/v1"
+  : "http://192.168.1.85:8000/api/v1"
 ).replace(/\/$/, "");
 
 type RequestOptions = {

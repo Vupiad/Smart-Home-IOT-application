@@ -9,6 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { theme } from "../../theme";
+import { useAuthContext } from "../../features/auth/state/AuthContext";
 import {
   fetchDailyTelemetry,
   type FetchResult,
@@ -64,8 +65,16 @@ export default function DailyEnvironmentChart({
     "hardcoded",
   );
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const { isAuthenticated } = useAuthContext();
 
   const loadData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setDataSource("hardcoded");
+      setErrorMessage(undefined);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(undefined);
 
@@ -84,7 +93,7 @@ export default function DailyEnvironmentChart({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Nếu có data truyền từ props thì dùng props, không fetch
@@ -93,10 +102,17 @@ export default function DailyEnvironmentChart({
       return;
     }
 
-    if (autoFetch) {
-      loadData();
+    if (!isAuthenticated) {
+      setChartData(DAILY_ENVIRONMENT_MOCK_DATA);
+      setDataSource("hardcoded");
+      setErrorMessage(undefined);
+      return;
     }
-  }, [propData, autoFetch, loadData]);
+
+    if (autoFetch) {
+      void loadData();
+    }
+  }, [autoFetch, isAuthenticated, loadData, propData]);
 
   const displayData = chartData;
 
