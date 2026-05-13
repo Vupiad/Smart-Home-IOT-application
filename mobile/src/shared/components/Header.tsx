@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import styles, { headerIconTokens } from "./Header.styles";
 import { useSmartHomeContext } from "../../shared/state/SmartHomeContext";
+import { useAuthContext } from "../../features/auth/state/AuthContext";
 import { fetchRealtimeTelemetry } from "../services/sensor.service";
 
 type HeaderProps = {
@@ -36,6 +37,7 @@ export default function Header({
   const [currentDate, setCurrentDate] = useState<string>("");
 
   const { telemetry } = useSmartHomeContext();
+  const { isAuthenticated } = useAuthContext();
 
   useEffect(() => {
     // Set formatted current date: "Wed, May 24th"
@@ -65,6 +67,12 @@ export default function Header({
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setCurrentTemp("--°C");
+      setCurrentHumidity("--%");
+      return;
+    }
+
     const loadLatestTelemetry = async () => {
       const result = await fetchRealtimeTelemetry(1);
       const latest = result.data[result.data.length - 1];
@@ -80,18 +88,20 @@ export default function Header({
     loadLatestTelemetry().catch((error) => {
       console.warn("[Header] Failed to load latest telemetry:", error);
     });
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (telemetry) {
-      if (telemetry.temperature !== undefined) {
-        setCurrentTemp(`${telemetry.temperature.toFixed(1)}°C`);
-      }
-      if (telemetry.humidity !== undefined) {
-        setCurrentHumidity(`${telemetry.humidity.toFixed(1)}%`);
-      }
+    if (!isAuthenticated || !telemetry) {
+      return;
     }
-  }, [telemetry]);
+
+    if (telemetry.temperature !== undefined) {
+      setCurrentTemp(`${telemetry.temperature.toFixed(1)}°C`);
+    }
+    if (telemetry.humidity !== undefined) {
+      setCurrentHumidity(`${telemetry.humidity.toFixed(1)}%`);
+    }
+  }, [isAuthenticated, telemetry]);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>

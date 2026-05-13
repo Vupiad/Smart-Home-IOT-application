@@ -25,6 +25,7 @@ import {
   type RealtimeDataPoint,
 } from "../services/sensor.service";
 import { useSmartHomeContext } from "../../shared/state/SmartHomeContext";
+import { useAuthContext } from "../../features/auth/state/AuthContext";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -284,6 +285,7 @@ export default function RealtimeEnvironmentChart() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const { telemetry } = useSmartHomeContext();
+  const { isAuthenticated } = useAuthContext();
 
   // Pulse animation for live indicator
   useEffect(() => {
@@ -306,6 +308,14 @@ export default function RealtimeEnvironmentChart() {
   }, [pulseAnim]);
 
   const loadData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setData([]);
+      setDataSource("hardcoded");
+      setLastUpdated("");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await fetchRealtimeTelemetry(DATA_POINTS);
       setData(result.data);
@@ -319,7 +329,7 @@ export default function RealtimeEnvironmentChart() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Initial load
   useEffect(() => {
@@ -328,27 +338,29 @@ export default function RealtimeEnvironmentChart() {
 
   // Update when we receive new websocket telemetry
   useEffect(() => {
-    if (telemetry) {
-      setData((prev) => {
-        const d = new Date(telemetry.timestamp);
-        const newPoint: RealtimeDataPoint = {
-          ts: d.getTime(),
-          time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`,
-          temperature: telemetry.temperature,
-          humidity: telemetry.humidity,
-        };
-        const newData = [...prev, newPoint];
-        if (newData.length > DATA_POINTS) {
-          newData.shift();
-        }
-        return newData;
-      });
-      const now = new Date();
-      setLastUpdated(
-        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`,
-      );
+    if (!isAuthenticated || !telemetry) {
+      return;
     }
-  }, [telemetry]);
+
+    setData((prev) => {
+      const d = new Date(telemetry.timestamp);
+      const newPoint: RealtimeDataPoint = {
+        ts: d.getTime(),
+        time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`,
+        temperature: telemetry.temperature,
+        humidity: telemetry.humidity,
+      };
+      const newData = [...prev, newPoint];
+      if (newData.length > DATA_POINTS) {
+        newData.shift();
+      }
+      return newData;
+    });
+    const now = new Date();
+    setLastUpdated(
+      `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`,
+    );
+  }, [isAuthenticated, telemetry]);
 
   // Derived values
   const latest = data.length > 0 ? data[data.length - 1] : null;

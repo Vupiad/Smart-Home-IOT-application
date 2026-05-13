@@ -19,11 +19,11 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:12:16.299783",
       "state": {
-        "status": "on",
+        "status": "off",
         "color": {
-          "r": 246,
-          "g": 193,
-          "b": 38
+          "r": 0,
+          "g": 0,
+          "b": 0
         }
       },
       "is_online": false,
@@ -51,7 +51,7 @@
       "base_topic": "yolohome/device/yolo_uno_01",
       "last_online": "2026-04-25T15:15:59.424354",
       "state": {
-        "status": "locked"
+        "status": "unlocked"
       },
       "is_online": false,
       "last_seen": null
@@ -87,7 +87,7 @@
         }
       ],
       "created_at": "2026-04-25T16:03:12.740122",
-      "is_activated": true
+      "is_activated": false
     },
     {
       "id": 2,
@@ -185,11 +185,29 @@
         }
       ],
       "created_at": "2026-05-13T01:32:52.279290"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "name": "TEST",
+      "isActive": true,
+      "is_activated": false,
+      "startTime": "10:10",
+      "endTime": "10:15",
+      "devices": [
+        {
+          "id": 3,
+          "state": {
+            "status": "unlocked"
+          }
+        }
+      ],
+      "created_at": "2026-05-13T10:07:07.583784"
     }
   ],
   "_meta": {
     "next_user_id": 2,
     "next_device_id": 4,
-    "next_mode_id": 5
+    "next_mode_id": 6
   }
 }

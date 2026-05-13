@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   DeviceCatalogItem,
@@ -10,6 +17,7 @@ import { automationService } from "../../features/automation/services/automation
 import { Mode } from "../../features/automation/types";
 import { theme } from "../../theme";
 import { getDevices, toggleDevicePower } from "../../features/control/services/device.service";
+import { useAuthContext } from "../../features/auth/state/AuthContext";
 import { wsService } from "../services/websocket.service";
 
 export type TelemetryData = {
@@ -62,31 +70,50 @@ const SmartHomeContext = createContext<SmartHomeContextValue | undefined>(
 );
 
 export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthContext();
   const [devices, setDevices] = useState<DeviceCatalogItem[]>([]);
   const [scenes, setScenes] = useState<AutomationScene[]>([]);
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
+    if (!isAuthenticated) {
+      setDevices([]);
+      return;
+    }
+
     try {
       const apiDevices = await getDevices();
       setDevices(apiDevices as DeviceCatalogItem[]);
     } catch (error) {
       console.error("Failed to load devices:", error);
     }
-  };
+  }, [isAuthenticated]);
 
-  const loadScenes = async () => {
+  const loadScenes = useCallback(async () => {
+    if (!isAuthenticated) {
+      setScenes([]);
+      return;
+    }
+
     try {
       const modes = await automationService.getModes();
       setScenes(modes.map(mapModeToScene));
     } catch (error) {
       console.error("Failed to load scenes:", error);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    loadDevices();
-    loadScenes();
+    if (!isAuthenticated) {
+      setDevices([]);
+      setScenes([]);
+      setTelemetry(null);
+      wsService.disconnect();
+      return;
+    }
+
+    void loadDevices();
+    void loadScenes();
 
     wsService.connect();
     const unsubscribe = wsService.subscribe((event) => {
@@ -118,7 +145,7 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
       wsService.disconnect();
     };
-  }, []);
+  }, [isAuthenticated, loadDevices, loadScenes]);
 
   const value = useMemo<SmartHomeContextValue>(() => {
     const selectDevicesByIds = (ids: string[]) => {
@@ -140,6 +167,10 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
       isOn: boolean,
       deviceType?: DeviceCatalogItem["type"],
     ) => {
+      if (!isAuthenticated) {
+        throw new Error("You must be logged in to control devices.");
+      }
+
       // Optimistic update
       setDevices((prev) =>
         prev.map((device) =>
@@ -162,6 +193,10 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
     };
 
     const setSceneActive = async (sceneId: string, isActive: boolean) => {
+      if (!isAuthenticated) {
+        throw new Error("You must be logged in to control modes.");
+      }
+
       // Optimistic update
       setScenes((prev) =>
         prev.map((scene) =>
@@ -195,7 +230,7 @@ export function SmartHomeProvider({ children }: { children: React.ReactNode }) {
       reloadScenes: loadScenes,
       reloadDevices: loadDevices,
     };
-  }, [devices, scenes]);
+  }, [devices, isAuthenticated, loadDevices, loadScenes, scenes, telemetry]);
 
   return (
     <SmartHomeContext.Provider value={value}>{children}</SmartHomeContext.Provider>
